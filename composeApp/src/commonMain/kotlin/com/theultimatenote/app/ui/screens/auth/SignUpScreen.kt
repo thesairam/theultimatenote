@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.theultimatenote.app.ui.components.GoogleSignInButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -202,6 +203,21 @@ fun SignUpScreen(
                     Text("Create Account", style = MaterialTheme.typography.labelLarge)
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "or",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            GoogleSignInButton(
+                onTokenReceived = { token -> viewModel.signInWithGoogle(token) },
+                onError = { error -> viewModel.setError(error) },
+            )
         }
     }
 }

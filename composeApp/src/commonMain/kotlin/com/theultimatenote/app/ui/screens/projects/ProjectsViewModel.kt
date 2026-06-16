@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.repository.AuthRepository
-import com.theultimatenote.app.data.repository.AuthUser
+import com.theultimatenote.app.data.repository.NotebookRepository
 import com.theultimatenote.app.data.repository.ProjectRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +23,7 @@ import kotlinx.datetime.Clock
 class ProjectsViewModel(
     private val projectRepository: ProjectRepository,
     private val authRepository: AuthRepository,
+    private val notebookRepository: NotebookRepository,
 ) : ViewModel() {
 
     private val _isCreating = MutableStateFlow(false)
@@ -39,7 +40,7 @@ class ProjectsViewModel(
         viewModelScope.launch {
             val user = authRepository.currentUser.first() ?: return@launch
             _isCreating.value = true
-            projectRepository.createProject(
+            val projectId = projectRepository.createProject(
                 Project(
                     name = name.trim(),
                     type = ProjectType.REGULAR,
@@ -47,6 +48,12 @@ class ProjectsViewModel(
                     createdAt = Clock.System.now().toEpochMilliseconds(),
                     isDeletable = true,
                 )
+            )
+            notebookRepository.createDefaultNotebookForProject(
+                projectId = projectId,
+                projectName = name.trim(),
+                ownerId = user.uid,
+                sections = listOf("Planning", "In Progress", "Review", "Done"),
             )
             _isCreating.value = false
         }

@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -36,7 +37,7 @@ class FirebaseAuthRepository : AuthRepository {
         } catch (e: FirebaseAuthInvalidUserException) {
             AuthResult.Error("No account found with this email.")
         } catch (e: Exception) {
-            AuthResult.Error("Sign in failed. Please check your connection and try again.")
+            AuthResult.Error(e.message ?: "Sign in failed. Please try again.")
         }
     }
 
@@ -53,7 +54,18 @@ class FirebaseAuthRepository : AuthRepository {
         } catch (e: FirebaseAuthInvalidCredentialsException) {
             AuthResult.Error("Invalid email format.")
         } catch (e: Exception) {
-            AuthResult.Error("Sign up failed. Please check your connection and try again.")
+            AuthResult.Error(e.message ?: "Sign up failed. Please try again.")
+        }
+    }
+
+    override suspend fun signInWithGoogle(idToken: String): AuthResult {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            val result = auth.signInWithCredential(credential).await()
+            val user = result.user ?: return AuthResult.Error("Google sign-in failed.")
+            AuthResult.Success(user.toAuthUser())
+        } catch (e: Exception) {
+            AuthResult.Error(e.message ?: "Google sign-in failed. Please try again.")
         }
     }
 

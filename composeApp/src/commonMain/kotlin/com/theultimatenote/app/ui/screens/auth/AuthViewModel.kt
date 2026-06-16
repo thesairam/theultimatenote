@@ -90,6 +90,20 @@ class AuthViewModel(
         }
     }
 
+    fun signInWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState(isLoading = true)
+            when (val result = authRepository.signInWithGoogle(idToken)) {
+                is AuthResult.Success -> _uiState.value = AuthUiState()
+                is AuthResult.Error -> _uiState.value = AuthUiState(error = result.message)
+            }
+        }
+    }
+
+    fun setError(message: String) {
+        _uiState.value = AuthUiState(error = message)
+    }
+
     fun signOut() {
         viewModelScope.launch {
             authRepository.signOut()

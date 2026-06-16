@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "396389540538",
+    "project_id": "theultimatenote-7a9cb",
+    "storage_bucket": "theultimatenote-7a9cb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:396389540538:android:0952f84f714ce7f8251883",
+        "android_client_info": {
+          "package_name": "com.theultimatenote.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6s43ITommRtC8iOm3e9dJ7McXVGwhgY0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

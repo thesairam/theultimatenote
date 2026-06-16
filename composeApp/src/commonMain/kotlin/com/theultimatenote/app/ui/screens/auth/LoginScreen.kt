@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.theultimatenote.app.ui.components.GoogleSignInButton
 
 @Composable
 fun LoginScreen(
@@ -146,6 +147,21 @@ fun LoginScreen(
                 Text("Sign In", style = MaterialTheme.typography.labelLarge)
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "or",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        GoogleSignInButton(
+            onTokenReceived = { token -> viewModel.signInWithGoogle(token) },
+            onError = { error -> viewModel.setError(error) },
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 

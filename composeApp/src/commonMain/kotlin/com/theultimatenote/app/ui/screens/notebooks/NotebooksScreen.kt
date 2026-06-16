@@ -1,21 +1,33 @@
 package com.theultimatenote.app.ui.screens.notebooks
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FormatBold
+import androidx.compose.material.icons.filled.FormatItalic
+import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Title
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -403,7 +415,39 @@ private fun PageEditorView(
                 singleLine = true,
                 textStyle = MaterialTheme.typography.titleLarge,
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                FilledTonalIconButton(onClick = { content += "\n# " }) {
+                    Icon(Icons.Default.Title, contentDescription = "Heading", modifier = Modifier.size(20.dp))
+                }
+                FilledTonalIconButton(onClick = { content += "**bold**" }) {
+                    Icon(Icons.Default.FormatBold, contentDescription = "Bold", modifier = Modifier.size(20.dp))
+                }
+                FilledTonalIconButton(onClick = { content += "*italic*" }) {
+                    Icon(Icons.Default.FormatItalic, contentDescription = "Italic", modifier = Modifier.size(20.dp))
+                }
+                FilledTonalIconButton(onClick = { content += "\n- " }) {
+                    Icon(Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = "Bullet List", modifier = Modifier.size(20.dp))
+                }
+                FilledTonalIconButton(onClick = { content += "\n1. " }) {
+                    Icon(Icons.Default.FormatListNumbered, contentDescription = "Numbered List", modifier = Modifier.size(20.dp))
+                }
+                FilledTonalIconButton(onClick = { content += "\n- [ ] " }) {
+                    Icon(Icons.Default.CheckBox, contentDescription = "Checklist", modifier = Modifier.size(20.dp))
+                }
+                FilledTonalIconButton(onClick = { content += "[text](url)" }) {
+                    Icon(Icons.Default.Link, contentDescription = "Link", modifier = Modifier.size(20.dp))
+                }
+                FilledTonalIconButton(onClick = { content += "\n```\ncode\n```" }) {
+                    Icon(Icons.Default.Code, contentDescription = "Code Block", modifier = Modifier.size(20.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },

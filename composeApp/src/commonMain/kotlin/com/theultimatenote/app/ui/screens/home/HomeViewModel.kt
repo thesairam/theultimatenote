@@ -2,6 +2,7 @@ package com.theultimatenote.app.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.data.repository.AuthRepository
@@ -49,6 +50,9 @@ class HomeViewModel(
         if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
     }
 
+    val projects: StateFlow<List<Project>> = allProjects
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val uiState: StateFlow<HomeUiState> = combine(
         authRepository.currentUser,
         dailyTasks,
@@ -80,6 +84,20 @@ class HomeViewModel(
     fun toggleTaskComplete(task: Task) {
         viewModelScope.launch {
             taskRepository.updateTask(task.copy(isCompletedToday = !task.isCompletedToday))
+        }
+    }
+
+    fun quickAddTask(title: String, projectId: String) {
+        if (title.isBlank() || projectId.isBlank()) return
+        viewModelScope.launch {
+            taskRepository.createTask(
+                Task(
+                    title = title.trim(),
+                    projectId = projectId,
+                    columnId = "",
+                    createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+                )
+            )
         }
     }
 }

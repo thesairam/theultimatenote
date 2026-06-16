@@ -26,8 +26,7 @@ DerivedData/
 *.perspectivev3
 *.hmap
 
-# Firebase config (contains API keys — generate your own from Firebase Console)
-google-services.json
+# Firebase config (iOS — generate your own from Firebase Console)
 GoogleService-Info.plist
 
 # OS

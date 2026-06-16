@@ -8,36 +8,47 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.Task
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -50,13 +61,21 @@ fun HomeScreen(
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val projects by viewModel.projects.collectAsState()
+    var showQuickAdd by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("The Ultimate Note") },
                 actions = {
+                    IconButton(onClick = onNavigateToChat) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Chat,
+                            contentDescription = "AI Chat",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
                     IconButton(onClick = onNavigateToProfile) {
                         Icon(
                             Icons.Default.AccountCircle,
@@ -80,20 +99,18 @@ fun HomeScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToChat,
+                onClick = { showQuickAdd = true },
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.onTertiary,
             ) {
-                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "AI Chat")
+                Icon(Icons.Default.Add, contentDescription = "Quick Add Task")
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Greeting
             item {
                 Text(
                     text = "Good day, ${uiState.userName}!",
@@ -102,7 +119,6 @@ fun HomeScreen(
                 )
             }
 
-            // Progress card
             if (uiState.totalCount > 0) {
                 item {
                     Card(
@@ -130,7 +146,6 @@ fun HomeScreen(
                 }
             }
 
-            // Daily tasks
             if (uiState.dailyTasks.isNotEmpty()) {
                 item {
                     Text(
@@ -145,7 +160,6 @@ fun HomeScreen(
                 }
             }
 
-            // Learning tasks
             if (uiState.learningTasks.isNotEmpty()) {
                 item {
                     Text(
@@ -160,7 +174,6 @@ fun HomeScreen(
                 }
             }
 
-            // Empty state
             if (uiState.dailyTasks.isEmpty() && uiState.learningTasks.isEmpty() && uiState.totalCount == 0) {
                 item {
                     Column(
@@ -173,7 +186,7 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = "Add tasks from Projects or Daily tab",
+                            text = "Tap + to add a task",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp),
@@ -183,6 +196,86 @@ fun HomeScreen(
             }
         }
     }
+
+    if (showQuickAdd) {
+        QuickAddTaskDialog(
+            projects = projects,
+            onAdd = { title, projectId -> viewModel.quickAddTask(title, projectId) },
+            onDismiss = { showQuickAdd = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QuickAddTaskDialog(
+    projects: List<Project>,
+    onAdd: (String, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var taskTitle by remember { mutableStateOf("") }
+    var selectedProject by remember { mutableStateOf(projects.firstOrNull()) }
+    var expanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Quick Add Task") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = taskTitle,
+                    onValueChange = { taskTitle = it },
+                    label = { Text("Task title") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                ) {
+                    OutlinedTextField(
+                        value = selectedProject?.name ?: "Select project",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Project") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                    ) {
+                        projects.forEach { project ->
+                            DropdownMenuItem(
+                                text = { Text(project.name) },
+                                onClick = {
+                                    selectedProject = project
+                                    expanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (taskTitle.isNotBlank() && selectedProject != null) {
+                        onAdd(taskTitle.trim(), selectedProject!!.id)
+                        onDismiss()
+                    }
+                },
+                enabled = taskTitle.isNotBlank() && selectedProject != null,
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
 
 @Composable
