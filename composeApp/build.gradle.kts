@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -78,10 +79,13 @@ android {
     }
 
     defaultConfig {
-        val localProps = java.util.Properties()
         val localPropsFile = rootProject.file("local.properties")
-        if (localPropsFile.exists()) localProps.load(localPropsFile.inputStream())
-        val geminiKey = localProps.getProperty("GEMINI_API_KEY") ?: project.findProperty("GEMINI_API_KEY")?.toString() ?: ""
+        val geminiKey = if (localPropsFile.exists()) {
+            Properties().apply { load(localPropsFile.inputStream()) }
+                .getProperty("GEMINI_API_KEY", "")
+        } else {
+            project.findProperty("GEMINI_API_KEY")?.toString() ?: ""
+        }
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     }
 
