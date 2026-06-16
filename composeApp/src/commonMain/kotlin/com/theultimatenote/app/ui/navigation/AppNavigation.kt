@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -22,6 +23,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.theultimatenote.app.ui.screens.auth.AuthViewModel
 import com.theultimatenote.app.ui.screens.auth.ForgotPasswordScreen
 import com.theultimatenote.app.ui.screens.auth.LoginScreen
@@ -29,8 +31,11 @@ import com.theultimatenote.app.ui.screens.auth.SignUpScreen
 import com.theultimatenote.app.ui.screens.daily.DailyScreen
 import com.theultimatenote.app.ui.screens.home.HomeScreen
 import com.theultimatenote.app.ui.screens.notebooks.NotebooksScreen
+import com.theultimatenote.app.ui.screens.projects.KanbanBoardScreen
+import com.theultimatenote.app.ui.screens.projects.KanbanViewModel
 import com.theultimatenote.app.ui.screens.projects.ProjectsScreen
 import kotlinx.serialization.Serializable
+import org.koin.compose.getKoin
 import org.koin.compose.viewmodel.koinViewModel
 
 @Serializable data object LoginRoute
@@ -38,6 +43,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Serializable data object ForgotPasswordRoute
 @Serializable data object HomeRoute
 @Serializable data object ProjectsRoute
+@Serializable data class KanbanBoardRoute(val projectId: String, val projectName: String)
 @Serializable data object DailyRoute
 @Serializable data object NotebooksRoute
 
@@ -102,22 +108,28 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
+    val showBottomBar = bottomNavItems.any { item ->
+        currentDestination?.hasRoute(item.route::class) == true
+    }
+
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                bottomNavItems.forEach { item ->
-                    NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) },
-                        selected = currentDestination?.hasRoute(item.route::class) == true,
-                        onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo(HomeRoute) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                    )
+            if (showBottomBar) {
+                NavigationBar {
+                    bottomNavItems.forEach { item ->
+                        NavigationBarItem(
+                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) },
+                            selected = currentDestination?.hasRoute(item.route::class) == true,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(HomeRoute) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                        )
+                    }
                 }
             }
         },
@@ -128,7 +140,25 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
             modifier = Modifier.padding(innerPadding),
         ) {
             composable<HomeRoute> { HomeScreen(onSignOut = { authViewModel.signOut() }) }
-            composable<ProjectsRoute> { ProjectsScreen() }
+            composable<ProjectsRoute> {
+                ProjectsScreen(
+                    onNavigateToBoard = { projectId, projectName ->
+                        navController.navigate(KanbanBoardRoute(projectId, projectName))
+                    },
+                )
+            }
+            composable<KanbanBoardRoute> { backStackEntry ->
+                val route = backStackEntry.toRoute<KanbanBoardRoute>()
+                val koin = getKoin()
+                val kanbanViewModel: KanbanViewModel = remember(route.projectId) {
+                    koin.get { org.koin.core.parameter.parametersOf(route.projectId) }
+                }
+                KanbanBoardScreen(
+                    viewModel = kanbanViewModel,
+                    projectName = route.projectName,
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
             composable<DailyRoute> { DailyScreen() }
             composable<NotebooksRoute> { NotebooksScreen() }
         }
