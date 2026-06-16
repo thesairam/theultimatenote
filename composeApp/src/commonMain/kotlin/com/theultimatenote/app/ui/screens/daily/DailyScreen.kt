@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -16,6 +15,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -28,8 +29,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,6 +60,9 @@ fun DailyScreen() {
     var showAddTask by remember { mutableStateOf(false) }
     var newTaskTitle by remember { mutableStateOf("") }
     var isRecurring by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var scheduledTime by remember { mutableStateOf<String?>(null) }
+    val timePickerState = rememberTimePickerState(initialHour = 8, initialMinute = 0, is24Hour = false)
 
     Scaffold(
         topBar = {
@@ -100,21 +107,60 @@ fun DailyScreen() {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 FilterChip(
                                     selected = isRecurring,
-                                    onClick = { isRecurring = !isRecurring },
-                                    label = { Text(if (isRecurring) "Recurring" else "Temporary") },
+                                    onClick = { isRecurring = true },
+                                    label = { Text("Recurring") },
                                 )
-                                Spacer(modifier = Modifier.weight(1f))
+                                FilterChip(
+                                    selected = !isRecurring,
+                                    onClick = {
+                                        isRecurring = false
+                                        scheduledTime = null
+                                    },
+                                    label = { Text("Temporary") },
+                                )
+                            }
+
+                            if (isRecurring) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                    TextButton(onClick = { showTimePicker = true }) {
+                                        Text(
+                                            text = scheduledTime ?: "Set reminder time",
+                                            color = if (scheduledTime != null) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                            ) {
                                 IconButton(onClick = {
-                                    viewModel.addDailyTask(newTaskTitle, isRecurring)
+                                    viewModel.addDailyTask(newTaskTitle, isRecurring, scheduledTime)
                                     newTaskTitle = ""
+                                    scheduledTime = null
                                     showAddTask = false
                                 }) {
                                     Icon(Icons.Default.Check, contentDescription = "Add", tint = MaterialTheme.colorScheme.primary)
                                 }
-                                IconButton(onClick = { showAddTask = false; newTaskTitle = "" }) {
+                                IconButton(onClick = {
+                                    showAddTask = false
+                                    newTaskTitle = ""
+                                    scheduledTime = null
+                                }) {
                                     Icon(Icons.Default.Close, contentDescription = "Cancel")
                                 }
                             }
@@ -123,7 +169,6 @@ fun DailyScreen() {
                 }
             }
 
-            // Daily tasks section
             item {
                 Text(
                     text = "Today's Tasks",
@@ -180,7 +225,6 @@ fun DailyScreen() {
                 }
             }
 
-            // Learning section
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -209,6 +253,29 @@ fun DailyScreen() {
                 }
             }
         }
+    }
+
+    if (showTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            title = { Text("Reminder Time") },
+            text = {
+                TimePicker(state = timePickerState)
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val h = timePickerState.hour
+                    val m = timePickerState.minute
+                    scheduledTime = "%02d:%02d".format(h, m)
+                    showTimePicker = false
+                }) {
+                    Text("Set")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 
@@ -242,12 +309,21 @@ private fun DailyTaskItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (task.isRecurring) {
-                    Text(
-                        text = "Recurring",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (task.isRecurring) {
+                        Text(
+                            text = "Recurring",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
+                    if (task.scheduledTime != null) {
+                        Text(
+                            text = task.scheduledTime,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             IconButton(onClick = onDelete) {

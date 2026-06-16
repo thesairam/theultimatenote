@@ -18,11 +18,20 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+
+data class TaskWithProject(
+    val task: Task,
+    val projectName: String,
+)
 
 data class HomeUiState(
     val userName: String = "",
     val dailyTasks: List<Task> = emptyList(),
     val learningTasks: List<Task> = emptyList(),
+    val projectTasks: List<TaskWithProject> = emptyList(),
     val completedCount: Int = 0,
     val totalCount: Int = 0,
 )
@@ -41,6 +50,7 @@ class HomeViewModel(
 
     private val dailyProject = allProjects.map { it.find { p -> p.type == ProjectType.DAILY } }
     private val learningProject = allProjects.map { it.find { p -> p.type == ProjectType.LEARNING } }
+    private val regularProjects = allProjects.map { it.filter { p -> p.type == ProjectType.REGULAR } }
 
     private val dailyTasks = dailyProject.flatMapLatest { project ->
         if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
@@ -50,6 +60,15 @@ class HomeViewModel(
         if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
     }
 
+    private val regularProjectTasks = regularProjects.flatMapLatest { projects ->
+        if (projects.isEmpty()) flowOf(emptyList())
+        else combine(projects.map { project ->
+            taskRepository.getTasksForProject(project.id).map { tasks ->
+                tasks.map { TaskWithProject(it, project.name) }
+            }
+        }) { arrays -> arrays.flatMap { it.toList() } }
+    }
+
     val projects: StateFlow<List<Project>> = allProjects
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -57,12 +76,14 @@ class HomeViewModel(
         authRepository.currentUser,
         dailyTasks,
         learningTasks,
-    ) { user, daily, learning ->
-        val allTasks = daily + learning
+        regularProjectTasks,
+    ) { user, daily, learning, projectTasks ->
+        val allTasks = daily + learning + projectTasks.map { it.task }
         HomeUiState(
             userName = user?.displayName ?: "there",
             dailyTasks = daily.filter { !it.isCompletedToday },
             learningTasks = learning.filter { !it.isCompletedToday },
+            projectTasks = projectTasks.filter { !it.task.isCompletedToday },
             completedCount = allTasks.count { it.isCompletedToday },
             totalCount = allTasks.size,
         )
@@ -83,19 +104,45 @@ class HomeViewModel(
 
     fun toggleTaskComplete(task: Task) {
         viewModelScope.launch {
-            taskRepository.updateTask(task.copy(isCompletedToday = !task.isCompletedToday))
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+            val newCompleted = !task.isCompletedToday
+            taskRepository.updateTask(
+                task.copy(
+                    isCompletedToday = newCompleted,
+                    completedDate = if (newCompleted) today else null,
+                )
+            )
         }
     }
 
-    fun quickAddTask(title: String, projectId: String) {
+    fun quickAddTask(
+        title: String,
+        projectId: String,
+        isRecurring: Boolean = false,
+        scheduledTime: String? = null,
+    ) {
         if (title.isBlank() || projectId.isBlank()) return
         viewModelScope.launch {
+            val project = allProjects.first().find { it.id == projectId }
+            val columnId = when (project?.type) {
+                ProjectType.DAILY -> if (isRecurring) "recurring" else "temporary"
+                ProjectType.LEARNING -> {
+                    val board = projectRepository.getBoard(projectId).first()
+                    board?.columns?.firstOrNull { it.id != "completed" }?.id ?: "path_1"
+                }
+                else -> {
+                    val board = projectRepository.getBoard(projectId).first()
+                    board?.columns?.minByOrNull { it.order }?.id ?: "planning"
+                }
+            }
             taskRepository.createTask(
                 Task(
                     title = title.trim(),
                     projectId = projectId,
-                    columnId = "",
-                    createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+                    columnId = columnId,
+                    isRecurring = isRecurring,
+                    scheduledTime = scheduledTime,
+                    createdAt = Clock.System.now().toEpochMilliseconds(),
                 )
             )
         }

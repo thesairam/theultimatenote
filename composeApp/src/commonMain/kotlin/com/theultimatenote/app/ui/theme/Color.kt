@@ -2,19 +2,24 @@ package com.theultimatenote.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val DeepForestGreen = Color(0xFF1B4332)
-val ForestGreen = Color(0xFF2D6A4F)
-val SageGreen = Color(0xFF52796F)
-val SageLightGreen = Color(0xFF84A98C)
+// Warm Golden Brown / Beige palette — cozy, trustworthy, calm
+val WarmBrown = Color(0xFF6D4C41)
+val DeepBrown = Color(0xFF4E342E)
+val DarkChocolate = Color(0xFF3E2723)
+val Caramel = Color(0xFF8D6E63)
+val LightBrown = Color(0xFFD7CCC8)
 val WarmBeige = Color(0xFFD4A373)
-val SoftCream = Color(0xFFFEFAF0)
 val MutedGold = Color(0xFFC9A227)
-val IvoryWhite = Color(0xFFFFFDF5)
+val LightGold = Color(0xFFF5E6B8)
+val SoftCream = Color(0xFFFFF8E7)
+val WarmWhite = Color(0xFFFFFDF5)
+val WarmLightBeige = Color(0xFFF5F0E8)
+val SoftBrown = Color(0xFFA1887F)
 
-val DarkBackground = Color(0xFF1A1F1C)
-val DarkSurface = Color(0xFF232B26)
-val DarkSurfaceVariant = Color(0xFF2E3830)
-
-val OnDarkPrimary = Color(0xFFA3D9B1)
-val OnDarkSecondary = Color(0xFF84A98C)
+// Dark theme
+val DarkBackground = Color(0xFF1C1210)
+val DarkSurface = Color(0xFF2C2018)
+val DarkSurfaceVariant = Color(0xFF3E2E22)
+val OnDarkPrimary = Color(0xFFD7B98E)
+val OnDarkSecondary = Color(0xFFBCAAA4)
 val ErrorRed = Color(0xFFCF6679)

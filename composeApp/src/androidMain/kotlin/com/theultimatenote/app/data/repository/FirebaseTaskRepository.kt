@@ -7,6 +7,9 @@ import com.theultimatenote.app.data.model.TaskStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 class FirebaseTaskRepository : TaskRepository {
 
@@ -61,6 +64,7 @@ class FirebaseTaskRepository : TaskRepository {
     }
 
     override suspend fun resetRecurringTasks(projectId: String) {
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
         val snapshot = tasksCol(projectId)
             .whereEqualTo("isRecurring", true)
             .whereEqualTo("isCompletedToday", true)
@@ -68,7 +72,13 @@ class FirebaseTaskRepository : TaskRepository {
 
         val batch = db.batch()
         snapshot.documents.forEach { doc ->
-            batch.update(doc.reference, "isCompletedToday", false)
+            val completedDate = doc.getString("completedDate")
+            if (completedDate != null && completedDate < today) {
+                batch.update(doc.reference, mapOf(
+                    "isCompletedToday" to false,
+                    "completedDate" to null,
+                ))
+            }
         }
         batch.commit().await()
     }
@@ -84,6 +94,7 @@ class FirebaseTaskRepository : TaskRepository {
             columnId = getString("columnId") ?: "",
             isRecurring = getBoolean("isRecurring") ?: false,
             isCompletedToday = getBoolean("isCompletedToday") ?: false,
+            completedDate = getString("completedDate"),
             scheduledTime = getString("scheduledTime"),
             dueDate = getLong("dueDate"),
             createdAt = getLong("createdAt") ?: 0L,
@@ -100,6 +111,7 @@ class FirebaseTaskRepository : TaskRepository {
         "columnId" to columnId,
         "isRecurring" to isRecurring,
         "isCompletedToday" to isCompletedToday,
+        "completedDate" to completedDate,
         "scheduledTime" to scheduledTime,
         "dueDate" to dueDate,
         "createdAt" to createdAt,

@@ -8,19 +8,17 @@ import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.data.repository.TaskRepository
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DailyViewModel(
@@ -54,7 +52,7 @@ class DailyViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun addDailyTask(title: String, isRecurring: Boolean) {
+    fun addDailyTask(title: String, isRecurring: Boolean, scheduledTime: String? = null) {
         val project = dailyProject.value ?: return
         if (title.isBlank()) return
         val columnId = if (isRecurring) "recurring" else "temporary"
@@ -65,6 +63,7 @@ class DailyViewModel(
                     projectId = project.id,
                     columnId = columnId,
                     isRecurring = isRecurring,
+                    scheduledTime = scheduledTime,
                     createdAt = Clock.System.now().toEpochMilliseconds(),
                 )
             )
@@ -88,7 +87,14 @@ class DailyViewModel(
 
     fun toggleTaskComplete(task: Task) {
         viewModelScope.launch {
-            taskRepository.updateTask(task.copy(isCompletedToday = !task.isCompletedToday))
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+            val newCompleted = !task.isCompletedToday
+            taskRepository.updateTask(
+                task.copy(
+                    isCompletedToday = newCompleted,
+                    completedDate = if (newCompleted) today else null,
+                )
+            )
         }
     }
 

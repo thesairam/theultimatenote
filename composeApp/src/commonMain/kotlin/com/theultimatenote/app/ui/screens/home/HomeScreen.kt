@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -16,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -24,6 +24,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,11 +33,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,6 +51,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.Project
+import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -174,7 +177,27 @@ fun HomeScreen(
                 }
             }
 
-            if (uiState.dailyTasks.isEmpty() && uiState.learningTasks.isEmpty() && uiState.totalCount == 0) {
+            if (uiState.projectTasks.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Project Tasks",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                items(uiState.projectTasks, key = { "home-proj-${it.task.id}" }) { taskWithProject ->
+                    HomeTaskItem(
+                        task = taskWithProject.task,
+                        projectName = taskWithProject.projectName,
+                        onToggle = { viewModel.toggleTaskComplete(taskWithProject.task) },
+                    )
+                }
+            }
+
+            if (uiState.dailyTasks.isEmpty() && uiState.learningTasks.isEmpty()
+                && uiState.projectTasks.isEmpty() && uiState.totalCount == 0
+            ) {
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
@@ -200,7 +223,9 @@ fun HomeScreen(
     if (showQuickAdd) {
         QuickAddTaskDialog(
             projects = projects,
-            onAdd = { title, projectId -> viewModel.quickAddTask(title, projectId) },
+            onAdd = { title, projectId, isRecurring, scheduledTime ->
+                viewModel.quickAddTask(title, projectId, isRecurring, scheduledTime)
+            },
             onDismiss = { showQuickAdd = false },
         )
     }
@@ -210,12 +235,18 @@ fun HomeScreen(
 @Composable
 private fun QuickAddTaskDialog(
     projects: List<Project>,
-    onAdd: (String, String) -> Unit,
+    onAdd: (String, String, Boolean, String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var taskTitle by remember { mutableStateOf("") }
     var selectedProject by remember { mutableStateOf(projects.firstOrNull()) }
     var expanded by remember { mutableStateOf(false) }
+    var isRecurring by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var scheduledTime by remember { mutableStateOf<String?>(null) }
+    val timePickerState = rememberTimePickerState(initialHour = 8, initialMinute = 0, is24Hour = false)
+
+    val isDailyProject = selectedProject?.type == ProjectType.DAILY
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -252,8 +283,56 @@ private fun QuickAddTaskDialog(
                                 onClick = {
                                     selectedProject = project
                                     expanded = false
+                                    if (project.type != ProjectType.DAILY) {
+                                        isRecurring = false
+                                        scheduledTime = null
+                                    }
                                 },
                             )
+                        }
+                    }
+                }
+
+                if (isDailyProject) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FilterChip(
+                            selected = isRecurring,
+                            onClick = {
+                                isRecurring = true
+                            },
+                            label = { Text("Recurring") },
+                        )
+                        FilterChip(
+                            selected = !isRecurring,
+                            onClick = {
+                                isRecurring = false
+                                scheduledTime = null
+                            },
+                            label = { Text("Temporary") },
+                        )
+                    }
+
+                    if (isRecurring) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                            TextButton(onClick = { showTimePicker = true }) {
+                                Text(
+                                    text = scheduledTime ?: "Set reminder time",
+                                    color = if (scheduledTime != null) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
@@ -263,7 +342,7 @@ private fun QuickAddTaskDialog(
             TextButton(
                 onClick = {
                     if (taskTitle.isNotBlank() && selectedProject != null) {
-                        onAdd(taskTitle.trim(), selectedProject!!.id)
+                        onAdd(taskTitle.trim(), selectedProject!!.id, isRecurring, scheduledTime)
                         onDismiss()
                     }
                 },
@@ -276,11 +355,35 @@ private fun QuickAddTaskDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
+
+    if (showTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            title = { Text("Reminder Time") },
+            text = {
+                TimePicker(state = timePickerState)
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val h = timePickerState.hour
+                    val m = timePickerState.minute
+                    scheduledTime = "%02d:%02d".format(h, m)
+                    showTimePicker = false
+                }) {
+                    Text("Set")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+            },
+        )
+    }
 }
 
 @Composable
 private fun HomeTaskItem(
     task: Task,
+    projectName: String? = null,
     onToggle: () -> Unit,
 ) {
     Card(
@@ -305,12 +408,28 @@ private fun HomeTaskItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (task.isRecurring) {
-                    Text(
-                        text = "Recurring",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (task.isRecurring) {
+                        Text(
+                            text = "Recurring",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
+                    if (projectName != null) {
+                        Text(
+                            text = projectName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                    if (task.scheduledTime != null) {
+                        Text(
+                            text = task.scheduledTime,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

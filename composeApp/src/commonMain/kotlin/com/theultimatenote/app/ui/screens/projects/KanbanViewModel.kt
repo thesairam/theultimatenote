@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 class KanbanViewModel(
     private val projectId: String,
@@ -55,7 +57,14 @@ class KanbanViewModel(
 
     fun toggleTaskComplete(task: Task) {
         viewModelScope.launch {
-            taskRepository.updateTask(task.copy(isCompletedToday = !task.isCompletedToday))
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+            val newCompleted = !task.isCompletedToday
+            taskRepository.updateTask(
+                task.copy(
+                    isCompletedToday = newCompleted,
+                    completedDate = if (newCompleted) today else null,
+                )
+            )
         }
     }
 

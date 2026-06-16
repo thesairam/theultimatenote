@@ -96,6 +96,37 @@ object NotificationHelper {
         )
     }
 
+    fun scheduleTaskReminder(context: Context, taskId: String, taskTitle: String, hour: Int, minute: Int) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val notificationId = taskId.hashCode()
+
+        val intent = Intent(context, NotificationReceiver::class.java).apply {
+            action = "TASK_REMINDER"
+            putExtra("task_title", taskTitle)
+            putExtra("notification_id", notificationId)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, notificationId, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            if (before(Calendar.getInstance())) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+        }
+
+        alarmManager.setRepeating(
+            AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            AlarmManager.INTERVAL_DAY,
+            pendingIntent,
+        )
+    }
+
     val motivationQuotes = listOf(
         "The only way to do great work is to love what you do. - Steve Jobs",
         "It does not matter how slowly you go as long as you do not stop. - Confucius",

@@ -19,6 +19,7 @@ data class Task(
     val columnId: String = "",
     val isRecurring: Boolean = false,
     val isCompletedToday: Boolean = false,
+    val completedDate: String? = null,
     val scheduledTime: String? = null,
     val dueDate: Long? = null,
     val createdAt: Long = 0L,
