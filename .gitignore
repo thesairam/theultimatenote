@@ -1,0 +1,39 @@
+# Gradle
+.gradle/
+build/
+local.properties
+
+# IDE
+.idea/
+*.iml
+
+# Kotlin
+*.class
+
+# Android
+*.apk
+*.aab
+*.dex
+*.ap_
+
+# iOS / Xcode
+iosApp/*.xcworkspace/xcuserdata/
+iosApp/*/xcuserdata/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.hmap
+
+# Firebase config (contains API keys — generate your own from Firebase Console)
+google-services.json
+GoogleService-Info.plist
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.keystore
+*.jks
