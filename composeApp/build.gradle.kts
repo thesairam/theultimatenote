@@ -7,9 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
-    // TODO: Uncomment after adding google-services.json to composeApp/
-    // alias(libs.plugins.googleServices)
-    // alias(libs.plugins.firebaseCrashlytics)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {
@@ -45,6 +43,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
             implementation(libs.multiplatform.settings)
         }
 
@@ -52,14 +51,8 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.androidx.activity.compose)
 
-            // TODO: Uncomment after adding google-services.json to composeApp/
-            // implementation(platform(libs.firebase.bom))
-            // implementation(libs.firebase.auth)
-            // implementation(libs.firebase.firestore)
-            // implementation(libs.firebase.storage)
-            // implementation(libs.firebase.messaging)
-            // implementation(libs.firebase.analytics)
-            // implementation(libs.firebase.crashlytics)
+            implementation(libs.firebase.auth)
+            implementation(libs.firebase.firestore)
         }
     }
 }
