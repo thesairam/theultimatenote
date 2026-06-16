@@ -16,6 +16,13 @@ import kotlinx.serialization.json.Json
 @Serializable
 data class GeminiRequest(
     val contents: List<GeminiContent>,
+    @SerialName("system_instruction")
+    val systemInstruction: GeminiSystemInstruction? = null,
+)
+
+@Serializable
+data class GeminiSystemInstruction(
+    val parts: List<GeminiPart>,
 )
 
 @Serializable
@@ -57,7 +64,7 @@ class GeminiService(private val apiKey: String) {
         }
     }
 
-    suspend fun chat(messages: List<ChatMessage>): String {
+    suspend fun chat(messages: List<ChatMessage>, systemContext: String? = null): String {
         if (apiKey.isBlank()) {
             return "Gemini API key not configured. Add your key in the app settings to enable AI chat."
         }
@@ -69,12 +76,16 @@ class GeminiService(private val apiKey: String) {
             )
         }
 
+        val systemInstruction = systemContext?.let {
+            GeminiSystemInstruction(parts = listOf(GeminiPart(text = it)))
+        }
+
         return try {
             val response = client.post(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$apiKey"
             ) {
                 contentType(ContentType.Application.Json)
-                setBody(GeminiRequest(contents = contents))
+                setBody(GeminiRequest(contents = contents, systemInstruction = systemInstruction))
             }
 
             val geminiResponse = response.body<GeminiResponse>()

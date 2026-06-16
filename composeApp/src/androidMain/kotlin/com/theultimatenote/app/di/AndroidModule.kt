@@ -2,7 +2,9 @@ package com.theultimatenote.app.di
 
 import com.theultimatenote.app.BuildConfig
 import com.theultimatenote.app.data.repository.AuthRepository
+import com.theultimatenote.app.data.repository.ChatRepository
 import com.theultimatenote.app.data.repository.FirebaseAuthRepository
+import com.theultimatenote.app.data.repository.FirebaseChatRepository
 import com.theultimatenote.app.data.repository.FirebaseNotebookRepository
 import com.theultimatenote.app.data.repository.FirebaseProjectRepository
 import com.theultimatenote.app.data.repository.FirebaseTaskRepository
@@ -21,5 +23,6 @@ actual fun platformModule(): Module = module {
     single<TaskRepository> { FirebaseTaskRepository() }
     single<NotebookRepository> { FirebaseNotebookRepository() }
     single<UserRepository> { FirebaseUserRepository() }
+    single<ChatRepository> { FirebaseChatRepository() }
     single { GeminiService(BuildConfig.GEMINI_API_KEY) }
 }
