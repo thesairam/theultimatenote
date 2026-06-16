@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -22,14 +23,26 @@ class AuthViewModel(
     private val authRepository: AuthRepository,
 ) : ViewModel() {
 
+    sealed class AuthState {
+        data object Loading : AuthState()
+        data object Authenticated : AuthState()
+        data object Unauthenticated : AuthState()
+    }
+
+    private val _authStateInitialized = MutableStateFlow(false)
+
+    val authState: StateFlow<AuthState> = authRepository.currentUser
+        .map { user ->
+            _authStateInitialized.value = true
+            if (user != null) AuthState.Authenticated else AuthState.Unauthenticated
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, AuthState.Loading)
+
     val currentUser: StateFlow<AuthUser?> = authRepository.currentUser
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
-
-    val isLoggedIn: Boolean
-        get() = authRepository.isLoggedIn
 
     fun signIn(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) {

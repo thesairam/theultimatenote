@@ -1,7 +1,11 @@
 package com.theultimatenote.app.di
 
 import com.theultimatenote.app.ui.screens.auth.AuthViewModel
+import com.theultimatenote.app.ui.screens.chat.ChatViewModel
 import com.theultimatenote.app.ui.screens.daily.DailyViewModel
+import com.theultimatenote.app.ui.screens.home.HomeViewModel
+import com.theultimatenote.app.ui.screens.notebooks.NotebooksViewModel
+import com.theultimatenote.app.ui.screens.profile.ProfileViewModel
 import com.theultimatenote.app.ui.screens.projects.KanbanViewModel
 import com.theultimatenote.app.ui.screens.projects.ProjectsViewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -13,5 +17,9 @@ val appModule = module {
     viewModelOf(::AuthViewModel)
     viewModelOf(::ProjectsViewModel)
     viewModelOf(::DailyViewModel)
+    viewModelOf(::HomeViewModel)
+    viewModelOf(::NotebooksViewModel)
+    viewModelOf(::ProfileViewModel)
+    viewModelOf(::ChatViewModel)
     factory { (projectId: String) -> KanbanViewModel(projectId, get(), get()) }
 }
