@@ -76,6 +76,22 @@ class ProfileViewModel(
         _uiState.value = _uiState.value.copy(saveSuccess = false)
     }
 
+    fun onCalendarConnected(provider: String, token: String) {
+        _uiState.value = _uiState.value.copy(
+            saveSuccess = false,
+            error = null,
+        )
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                saveSuccess = true,
+            )
+        }
+    }
+
+    fun openUrl(url: String) {
+        // Handled via LocalUriHandler in the composable
+    }
+
     fun deleteAccount() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isDeleting = true, error = null)

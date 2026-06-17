@@ -58,6 +58,7 @@ kotlin {
             implementation(libs.credentials)
             implementation(libs.credentials.play)
             implementation(libs.googleid)
+            implementation(libs.play.services.auth.base)
         }
     }
 }

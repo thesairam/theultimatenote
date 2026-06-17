@@ -101,6 +101,8 @@ class FirebaseTaskRepository : TaskRepository {
             order = getLong("order")?.toInt() ?: 0,
             isUrgent = getBoolean("isUrgent") ?: false,
             isImportant = getBoolean("isImportant") ?: false,
+            calendarEventId = getString("calendarEventId"),
+            calendarProvider = getString("calendarProvider"),
         )
     }
 
@@ -120,5 +122,7 @@ class FirebaseTaskRepository : TaskRepository {
         "order" to order,
         "isUrgent" to isUrgent,
         "isImportant" to isImportant,
+        "calendarEventId" to calendarEventId,
+        "calendarProvider" to calendarProvider,
     )
 }

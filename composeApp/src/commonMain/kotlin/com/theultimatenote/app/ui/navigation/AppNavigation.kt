@@ -44,6 +44,7 @@ import com.theultimatenote.app.ui.screens.projects.KanbanViewModel
 import com.theultimatenote.app.ui.screens.projects.ProjectsScreen
 import com.theultimatenote.app.ui.screens.profile.ProfileScreen
 import com.theultimatenote.app.ui.screens.chat.ChatScreen
+import com.theultimatenote.app.ui.screens.stats.StatsScreen
 import kotlinx.serialization.Serializable
 import org.koin.compose.getKoin
 import org.koin.compose.viewmodel.koinViewModel
@@ -58,6 +59,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Serializable data object NotebooksRoute
 @Serializable data object ProfileRoute
 @Serializable data object ChatRoute
+@Serializable data object StatsRoute
 
 data class BottomNavItem(
     val label: String,
@@ -135,8 +137,8 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                 ) {
                     bottomNavItems.forEach { item ->
                         NavigationBarItem(
@@ -151,11 +153,11 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.tertiary,
-                                selectedTextColor = MaterialTheme.colorScheme.tertiary,
-                                indicatorColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.surface,
+                                unselectedIconColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.6f),
+                                unselectedTextColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.6f),
                             ),
                         )
                     }
@@ -173,6 +175,7 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
                     onSignOut = { authViewModel.signOut() },
                     onNavigateToProfile = { navController.navigate(ProfileRoute) },
                     onNavigateToChat = { navController.navigate(ChatRoute) },
+                    onNavigateToStats = { navController.navigate(StatsRoute) },
                 )
             }
             composable<ProjectsRoute> {
@@ -202,6 +205,9 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
             }
             composable<ChatRoute> {
                 ChatScreen(onNavigateBack = { navController.popBackStack() })
+            }
+            composable<StatsRoute> {
+                StatsScreen(onNavigateBack = { navController.popBackStack() })
             }
         }
     }

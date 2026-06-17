@@ -49,6 +49,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalUriHandler
+import com.theultimatenote.app.ui.components.AppleCalendarConnectButton
+import com.theultimatenote.app.ui.components.GoogleCalendarConnectButton
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -208,6 +210,39 @@ fun ProfileScreen(
                         Text("Save Profile")
                     }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider(
+                    thickness = 0.75.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Calendar Sync",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = "Sync tasks with scheduled times to your calendar",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                GoogleCalendarConnectButton(
+                    onConnected = { token ->
+                        viewModel.onCalendarConnected("google", token)
+                    },
+                    onError = { /* snackbar handled by uiState.error */ },
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                AppleCalendarConnectButton(
+                    onConnected = { token ->
+                        viewModel.onCalendarConnected("apple", token)
+                    },
+                    onError = { /* snackbar handled by uiState.error */ },
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
                 HorizontalDivider(

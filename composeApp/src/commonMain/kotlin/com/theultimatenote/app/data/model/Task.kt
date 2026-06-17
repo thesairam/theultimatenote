@@ -26,4 +26,6 @@ data class Task(
     val order: Int = 0,
     val isUrgent: Boolean = false,
     val isImportant: Boolean = false,
+    val calendarEventId: String? = null,
+    val calendarProvider: String? = null,
 )

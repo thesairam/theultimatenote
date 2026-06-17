@@ -21,6 +21,8 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -34,7 +36,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -59,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
+import com.theultimatenote.app.ui.components.PomodoroTimerSheet
 import com.theultimatenote.app.ui.components.TaskEditDialog
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -68,36 +71,50 @@ fun HomeScreen(
     onSignOut: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToChat: () -> Unit = {},
+    onNavigateToStats: () -> Unit = {},
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState()
     val projects by viewModel.projects.collectAsState()
     var showQuickAdd by remember { mutableStateOf(false) }
+    var pomodoroTask by remember { mutableStateOf<Task?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("The Ultimate Note") },
+                title = {
+                    Text(
+                        "The Ultimate Note",
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                },
                 actions = {
+                    IconButton(onClick = onNavigateToStats) {
+                        Icon(
+                            Icons.Default.BarChart,
+                            contentDescription = "Stats",
+                            tint = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
                     IconButton(onClick = onNavigateToChat) {
                         Icon(
                             Icons.AutoMirrored.Filled.Chat,
                             contentDescription = "AI Chat",
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = MaterialTheme.colorScheme.tertiary,
                         )
                     }
                     IconButton(onClick = onNavigateToProfile) {
                         Icon(
                             Icons.Default.AccountCircle,
                             contentDescription = "Profile",
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = MaterialTheme.colorScheme.tertiary,
                         )
                     }
                     IconButton(onClick = onSignOut) {
                         Icon(
                             Icons.AutoMirrored.Filled.Logout,
                             contentDescription = "Sign Out",
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = MaterialTheme.colorScheme.tertiary,
                         )
                     }
                 },
@@ -140,37 +157,25 @@ fun HomeScreen(
             if (uiState.totalCount > 0) {
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().clickable { onNavigateToStats() },
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                         shape = RoundedCornerShape(20.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = "Today's Progress",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                )
-                                Text(
-                                    text = "${uiState.completedCount}/${uiState.totalCount}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(
-                                progress = {
-                                    if (uiState.totalCount > 0) uiState.completedCount.toFloat() / uiState.totalCount
-                                    else 0f
-                                },
-                                modifier = Modifier.fillMaxWidth().height(6.dp),
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "${uiState.completedCount}/${uiState.totalCount} done today",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                            Text(
+                                text = "View Dashboard →",
+                                style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.tertiary,
-                                trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
                             )
                         }
                     }
@@ -188,6 +193,7 @@ fun HomeScreen(
                         isDailyProject = true,
                         onToggle = { viewModel.toggleTaskComplete(task) },
                         onEdit = { viewModel.updateTask(it) },
+                        onStartPomodoro = { pomodoroTask = task },
                     )
                 }
             }
@@ -202,6 +208,7 @@ fun HomeScreen(
                         task = task,
                         onToggle = { viewModel.toggleTaskComplete(task) },
                         onEdit = { viewModel.updateTask(it) },
+                        onStartPomodoro = { pomodoroTask = task },
                     )
                 }
             }
@@ -217,6 +224,7 @@ fun HomeScreen(
                         projectName = taskWithProject.projectName,
                         onToggle = { viewModel.toggleTaskComplete(taskWithProject.task) },
                         onEdit = { viewModel.updateTask(it) },
+                        onStartPomodoro = { pomodoroTask = taskWithProject.task },
                     )
                 }
             }
@@ -253,6 +261,17 @@ fun HomeScreen(
                 viewModel.quickAddTask(title, projectId, isRecurring, scheduledTime)
             },
             onDismiss = { showQuickAdd = false },
+        )
+    }
+
+    pomodoroTask?.let { task ->
+        PomodoroTimerSheet(
+            taskTitle = task.title,
+            onComplete = { minutes ->
+                viewModel.savePomodoroSession(task, minutes)
+            },
+            onCancel = { pomodoroTask = null },
+            onDismiss = { pomodoroTask = null },
         )
     }
 }
@@ -432,6 +451,7 @@ private fun HomeTaskItem(
     isDailyProject: Boolean = false,
     onToggle: () -> Unit,
     onEdit: (Task) -> Unit = {},
+    onStartPomodoro: () -> Unit = {},
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
 
@@ -487,6 +507,19 @@ private fun HomeTaskItem(
                             )
                         }
                     }
+                }
+            }
+            if (!task.isCompletedToday) {
+                IconButton(
+                    onClick = onStartPomodoro,
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = "Start Focus",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
                 }
             }
         }

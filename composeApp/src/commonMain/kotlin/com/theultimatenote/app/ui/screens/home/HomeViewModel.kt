@@ -2,11 +2,13 @@ package com.theultimatenote.app.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.theultimatenote.app.data.model.PomodoroSession
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.NotificationScheduler
+import com.theultimatenote.app.data.repository.PomodoroRepository
 import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.data.repository.TaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,6 +45,7 @@ class HomeViewModel(
     private val projectRepository: ProjectRepository,
     private val taskRepository: TaskRepository,
     private val notificationScheduler: NotificationScheduler,
+    private val pomodoroRepository: PomodoroRepository,
 ) : ViewModel() {
 
     private val allProjects = authRepository.currentUser
@@ -132,6 +135,25 @@ class HomeViewModel(
             } else {
                 notificationScheduler.cancelTaskReminder(task.id)
             }
+        }
+    }
+
+    fun savePomodoroSession(task: Task, durationMinutes: Int) {
+        viewModelScope.launch {
+            val user = authRepository.currentUser.first() ?: return@launch
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+            pomodoroRepository.saveSession(
+                userId = user.uid,
+                session = PomodoroSession(
+                    taskId = task.id,
+                    projectId = task.projectId,
+                    taskTitle = task.title,
+                    startTime = Clock.System.now().toEpochMilliseconds(),
+                    durationMinutes = durationMinutes,
+                    completed = true,
+                    date = today,
+                ),
+            )
         }
     }
 
