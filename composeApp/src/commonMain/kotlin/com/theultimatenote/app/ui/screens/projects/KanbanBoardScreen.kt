@@ -21,10 +21,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.ViewKanban
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -32,9 +34,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -79,11 +84,18 @@ fun KanbanBoardScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showMatrix = !showMatrix }) {
+                    TextButton(onClick = { showMatrix = !showMatrix }) {
                         Icon(
                             if (showMatrix) Icons.Default.ViewKanban else Icons.Default.GridView,
-                            contentDescription = if (showMatrix) "Kanban View" else "Matrix View",
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (showMatrix) "Kanban" else "Matrix",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.labelMedium,
                         )
                     }
                 },
@@ -133,7 +145,7 @@ fun KanbanBoardScreen(
                         tasks = columnTasks,
                         allColumns = columns,
                         isDailyProject = isDailyProject,
-                        onAddTask = { title -> viewModel.addTask(title, column.id) },
+                        onAddTask = { title, urgent, important -> viewModel.addTask(title, column.id, urgent, important) },
                         onMoveTask = { taskId, newColId -> viewModel.moveTask(taskId, newColId) },
                         onToggleComplete = { task -> viewModel.toggleTaskComplete(task) },
                         onDeleteTask = { taskId -> viewModel.deleteTask(taskId) },
@@ -151,7 +163,7 @@ private fun KanbanColumnCard(
     tasks: List<Task>,
     allColumns: List<KanbanColumn>,
     isDailyProject: Boolean,
-    onAddTask: (String) -> Unit,
+    onAddTask: (String, Boolean, Boolean) -> Unit,
     onMoveTask: (String, String) -> Unit,
     onToggleComplete: (Task) -> Unit,
     onDeleteTask: (String) -> Unit,
@@ -159,6 +171,8 @@ private fun KanbanColumnCard(
 ) {
     var showAddTask by remember { mutableStateOf(false) }
     var newTaskTitle by remember { mutableStateOf("") }
+    var newTaskUrgent by remember { mutableStateOf(false) }
+    var newTaskImportant by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.width(280.dp).fillMaxHeight(),
@@ -196,29 +210,70 @@ private fun KanbanColumnCard(
             }
 
             if (showAddTask) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedTextField(
-                        value = newTaskTitle,
-                        onValueChange = { newTaskTitle = it },
-                        placeholder = { Text("Task title") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                    )
-                    IconButton(onClick = {
-                        if (newTaskTitle.isNotBlank()) {
-                            onAddTask(newTaskTitle)
-                            newTaskTitle = ""
-                            showAddTask = false
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OutlinedTextField(
+                            value = newTaskTitle,
+                            onValueChange = { newTaskTitle = it },
+                            placeholder = { Text("Task title") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                        )
+                        IconButton(onClick = {
+                            if (newTaskTitle.isNotBlank()) {
+                                onAddTask(newTaskTitle, newTaskUrgent, newTaskImportant)
+                                newTaskTitle = ""
+                                newTaskUrgent = false
+                                newTaskImportant = false
+                                showAddTask = false
+                            }
+                        }) {
+                            Icon(Icons.Default.Check, contentDescription = "Add", tint = MaterialTheme.colorScheme.primary)
                         }
-                    }) {
-                        Icon(Icons.Default.Check, contentDescription = "Add", tint = MaterialTheme.colorScheme.primary)
+                        IconButton(onClick = { showAddTask = false; newTaskTitle = ""; newTaskUrgent = false; newTaskImportant = false }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cancel")
+                        }
                     }
-                    IconButton(onClick = { showAddTask = false; newTaskTitle = "" }) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Priority:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        FilterChip(
+                            selected = newTaskUrgent,
+                            onClick = { newTaskUrgent = !newTaskUrgent },
+                            label = { Text("Urgent", style = MaterialTheme.typography.labelSmall) },
+                            leadingIcon = if (newTaskUrgent) {
+                                { Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                            } else null,
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                                selectedLabelColor = MaterialTheme.colorScheme.error,
+                                selectedLeadingIconColor = MaterialTheme.colorScheme.error,
+                            ),
+                        )
+                        FilterChip(
+                            selected = newTaskImportant,
+                            onClick = { newTaskImportant = !newTaskImportant },
+                            label = { Text("Important", style = MaterialTheme.typography.labelSmall) },
+                            leadingIcon = if (newTaskImportant) {
+                                { Icon(Icons.Default.PriorityHigh, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                            } else null,
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
+                                selectedLabelColor = MaterialTheme.colorScheme.tertiary,
+                                selectedLeadingIconColor = MaterialTheme.colorScheme.tertiary,
+                            ),
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))

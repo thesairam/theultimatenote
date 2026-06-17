@@ -11,16 +11,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ViewKanban
 import androidx.compose.material3.AlertDialog
@@ -29,6 +32,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,6 +76,8 @@ fun DailyScreen() {
     var isRecurring by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var scheduledTime by remember { mutableStateOf<String?>(null) }
+    var isImportant by remember { mutableStateOf(true) }
+    var isUrgent by remember { mutableStateOf(false) }
     var showMatrix by remember { mutableStateOf(false) }
     val timePickerState = rememberTimePickerState(initialHour = 8, initialMinute = 0, is24Hour = false)
 
@@ -80,11 +86,18 @@ fun DailyScreen() {
             TopAppBar(
                 title = { Text("Daily Dashboard") },
                 actions = {
-                    IconButton(onClick = { showMatrix = !showMatrix }) {
+                    TextButton(onClick = { showMatrix = !showMatrix }) {
                         Icon(
                             if (showMatrix) Icons.Default.ViewKanban else Icons.Default.GridView,
-                            contentDescription = if (showMatrix) "List View" else "Matrix View",
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (showMatrix) "List" else "Matrix",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.labelMedium,
                         )
                     }
                 },
@@ -180,14 +193,55 @@ fun DailyScreen() {
                                 }
                             }
 
+                            Text(
+                                text = "Set Priority",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                FilterChip(
+                                    selected = isUrgent,
+                                    onClick = { isUrgent = !isUrgent },
+                                    label = { Text("Urgent") },
+                                    leadingIcon = if (isUrgent) {
+                                        { Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.padding(0.dp)) }
+                                    } else null,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                                        selectedLabelColor = MaterialTheme.colorScheme.error,
+                                        selectedLeadingIconColor = MaterialTheme.colorScheme.error,
+                                    ),
+                                )
+                                FilterChip(
+                                    selected = isImportant,
+                                    onClick = { isImportant = !isImportant },
+                                    label = { Text("Important") },
+                                    leadingIcon = if (isImportant) {
+                                        { Icon(Icons.Default.PriorityHigh, contentDescription = null, modifier = Modifier.padding(0.dp)) }
+                                    } else null,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
+                                        selectedLabelColor = MaterialTheme.colorScheme.tertiary,
+                                        selectedLeadingIconColor = MaterialTheme.colorScheme.tertiary,
+                                    ),
+                                )
+                            }
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End,
                             ) {
                                 IconButton(onClick = {
-                                    viewModel.addDailyTask(newTaskTitle, isRecurring, scheduledTime)
+                                    viewModel.addDailyTask(newTaskTitle, isRecurring, scheduledTime, isUrgent, isImportant)
                                     newTaskTitle = ""
                                     scheduledTime = null
+                                    isImportant = true
+                                    isUrgent = false
                                     showAddTask = false
                                 }) {
                                     Icon(Icons.Default.Check, contentDescription = "Add", tint = MaterialTheme.colorScheme.primary)

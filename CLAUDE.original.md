@@ -542,3 +542,199 @@ When implementing integrations or security-sensitive features:
 5. If a better modern approach exists, prefer the modern approach while maintaining the same level of security and reliability.
 
 The goal is to leverage lessons learned from SSSNL for integrations, security, and reliability while designing all product functionality specifically for this application.
+
+
+
+REVENUE
+
+For your app, revenue should align with the fact that you're building a **personal productivity + journaling + learning + AI assistant** product.
+
+The biggest mistake would be trying to charge everyone immediately. Most productivity apps die because users don't stay long enough to see the value.
+
+## Revenue Model 1: Freemium (Recommended)
+
+### Free
+
+* Unlimited tasks
+* Daily project
+* Learning project
+* 3 custom projects
+* Basic notebooks
+* Basic reminders
+
+### Pro (€4.99–€7.99/month)
+
+* Unlimited projects
+* Unlimited notebooks
+* Advanced recurring tasks
+* Calendar integrations
+* Rich notebook formatting
+* AI notebook generation
+* AI chat assistant
+* Advanced analytics
+* Export options
+
+This is how apps like Notion and Todoist convert users.
+
+---
+
+## Revenue Model 2: AI Credits
+
+Since you want Gemini chat.
+
+Free:
+
+* 20 AI messages/day
+
+Pro:
+
+* Unlimited AI
+
+Or
+
+Pay-as-you-go:
+
+* €5 = 1,000 AI actions
+
+Examples:
+
+* Generate notebook structure
+* Summarize journal
+* Create learning roadmap
+* Weekly review
+
+This prevents AI costs from eating your profits.
+
+---
+
+## Revenue Model 3: Templates Marketplace
+
+Later, users can create and share:
+
+* Productivity systems
+* Learning systems
+* Journal templates
+* Habit trackers
+
+Example:
+
+* Template creator gets 70%
+* You get 30%
+
+This becomes interesting if you reach 10k+ active users.
+
+---
+
+## Revenue Model 4: Learning Packs
+
+Your Learning project is actually unique.
+
+You could sell:
+
+* AI Learning Path
+* Startup Founder Path
+* Product Manager Path
+* Fitness Path
+* Language Learning Path
+
+For example:
+
+"30-Day AI Engineer Roadmap" → €9.99
+
+One-time purchase.
+
+---
+
+## Revenue Model 5: Team Version (Later)
+
+Your first audience should be individuals.
+
+But later:
+
+* Family planner
+* Student groups
+* Startup teams
+
+Could be:
+
+€5/user/month
+
+This is where most productivity companies eventually make serious revenue.
+
+---
+
+## Revenue Model 6: Affiliate Revenue
+
+In Learning mode:
+
+User adds:
+
+* AI Course
+* Marketing Course
+* Design Course
+
+You recommend:
+
+* Courses
+* Books
+* Tools
+
+Using affiliate links.
+
+Not huge money initially, but passive.
+
+---
+
+## What I Would Do
+
+### MVP (0–1,000 users)
+
+Charge nothing.
+
+Goal:
+
+* Retention
+* Feedback
+* Product-market fit
+
+### 1,000–5,000 users
+
+Introduce:
+
+Pro Plan
+
+* €4.99/month
+
+Includes:
+
+* Unlimited projects
+* Unlimited notebooks
+* AI features
+
+### 5,000+ users
+
+Add:
+
+* Learning packs
+* Template marketplace
+
+### 20,000+ users
+
+Add:
+
+* Team version
+
+---
+
+The strongest monetization angle is probably not Kanban or journaling. It's the combination of:
+
+**Daily Planner + Learning Tracker + Journal + AI Coach**
+
+Most apps do only one of these well. If users start relying on the app every morning to see:
+
+* today's tasks,
+* today's learning,
+* today's journal,
+* today's motivational quote,
+
+then a €5–€8/month subscription becomes much easier to justify.

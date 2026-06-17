@@ -32,7 +32,7 @@ class KanbanViewModel(
     private val _isAddingTask = MutableStateFlow(false)
     val isAddingTask: StateFlow<Boolean> = _isAddingTask.asStateFlow()
 
-    fun addTask(title: String, columnId: String) {
+    fun addTask(title: String, columnId: String, isUrgent: Boolean = false, isImportant: Boolean = false) {
         if (title.isBlank()) return
         viewModelScope.launch {
             _isAddingTask.value = true
@@ -43,6 +43,8 @@ class KanbanViewModel(
                     columnId = columnId,
                     status = TaskStatus.TODO,
                     createdAt = Clock.System.now().toEpochMilliseconds(),
+                    isUrgent = isUrgent,
+                    isImportant = isImportant,
                 )
             )
             _isAddingTask.value = false

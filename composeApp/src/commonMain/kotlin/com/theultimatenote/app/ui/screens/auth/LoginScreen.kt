@@ -73,7 +73,7 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "Plan · Learn · Journal · Grow",
+            text = "Plan · Prioritize · Learn · Journal · Grow",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
