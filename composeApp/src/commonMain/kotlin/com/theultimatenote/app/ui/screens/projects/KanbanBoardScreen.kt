@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.ViewKanban
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -52,6 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.KanbanColumn
 import com.theultimatenote.app.data.model.Task
+import com.theultimatenote.app.ui.components.EisenhowerMatrixView
 import com.theultimatenote.app.ui.components.TaskEditDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,6 +67,7 @@ fun KanbanBoardScreen(
 ) {
     val board by viewModel.board.collectAsState()
     val tasks by viewModel.tasks.collectAsState()
+    var showMatrix by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -72,6 +76,15 @@ fun KanbanBoardScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showMatrix = !showMatrix }) {
+                        Icon(
+                            if (showMatrix) Icons.Default.ViewKanban else Icons.Default.GridView,
+                            contentDescription = if (showMatrix) "Kanban View" else "Matrix View",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -95,6 +108,18 @@ fun KanbanBoardScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        } else if (showMatrix) {
+            EisenhowerMatrixView(
+                tasks = tasks,
+                columns = columns,
+                onToggleComplete = { task -> viewModel.toggleTaskComplete(task) },
+                onMoveQuadrant = { task, urgent, important ->
+                    viewModel.updateTask(task.copy(isUrgent = urgent, isImportant = important))
+                },
+                onEditTask = { task -> viewModel.updateTask(task) },
+                isDailyProject = isDailyProject,
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
+            )
         } else {
             LazyRow(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),

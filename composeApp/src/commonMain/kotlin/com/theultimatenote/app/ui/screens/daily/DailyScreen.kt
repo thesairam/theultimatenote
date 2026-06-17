@@ -20,7 +20,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.ViewKanban
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -51,6 +53,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.Task
+import com.theultimatenote.app.ui.components.EisenhowerMatrixView
 import com.theultimatenote.app.ui.components.TaskEditDialog
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -62,18 +65,29 @@ fun DailyScreen() {
     val learningTasks by viewModel.learningTasks.collectAsState()
     val dailyProject by viewModel.dailyProject.collectAsState()
     val learningProject by viewModel.learningProject.collectAsState()
+    val dailyBoard by viewModel.dailyBoard.collectAsState()
 
     var showAddTask by remember { mutableStateOf(false) }
     var newTaskTitle by remember { mutableStateOf("") }
     var isRecurring by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var scheduledTime by remember { mutableStateOf<String?>(null) }
+    var showMatrix by remember { mutableStateOf(false) }
     val timePickerState = rememberTimePickerState(initialHour = 8, initialMinute = 0, is24Hour = false)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Daily Dashboard") },
+                actions = {
+                    IconButton(onClick = { showMatrix = !showMatrix }) {
+                        Icon(
+                            if (showMatrix) Icons.Default.ViewKanban else Icons.Default.GridView,
+                            contentDescription = if (showMatrix) "List View" else "Matrix View",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -93,6 +107,21 @@ fun DailyScreen() {
             }
         },
     ) { innerPadding ->
+        if (showMatrix) {
+            val allDailyTasks = dailyTasks + learningTasks
+            val columns = dailyBoard?.columns ?: emptyList()
+            EisenhowerMatrixView(
+                tasks = allDailyTasks,
+                columns = columns,
+                onToggleComplete = { task -> viewModel.toggleTaskComplete(task) },
+                onMoveQuadrant = { task, urgent, important ->
+                    viewModel.updateTask(task.copy(isUrgent = urgent, isImportant = important))
+                },
+                onEditTask = { task -> viewModel.updateTask(task) },
+                isDailyProject = true,
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
+            )
+        } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -283,6 +312,7 @@ fun DailyScreen() {
                 }
             }
         }
+        } // end else (list view)
     }
 
     if (showTimePicker) {

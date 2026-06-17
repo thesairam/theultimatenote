@@ -2,6 +2,7 @@ package com.theultimatenote.app.ui.screens.daily
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.theultimatenote.app.data.model.KanbanBoard
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
@@ -42,6 +43,12 @@ class DailyViewModel(
         .map { projects -> projects.find { it.type == ProjectType.LEARNING } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val dailyBoard: StateFlow<KanbanBoard?> = dailyProject
+        .flatMapLatest { project ->
+            if (project != null) projectRepository.getBoard(project.id) else flowOf(null)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val dailyTasks: StateFlow<List<Task>> = dailyProject
         .flatMapLatest { project ->
             if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
@@ -54,7 +61,13 @@ class DailyViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun addDailyTask(title: String, isRecurring: Boolean, scheduledTime: String? = null) {
+    fun addDailyTask(
+        title: String,
+        isRecurring: Boolean,
+        scheduledTime: String? = null,
+        isUrgent: Boolean? = null,
+        isImportant: Boolean? = null,
+    ) {
         val project = dailyProject.value ?: return
         if (title.isBlank()) return
         val columnId = if (isRecurring) "recurring" else "temporary"
@@ -67,6 +80,8 @@ class DailyViewModel(
                     isRecurring = isRecurring,
                     scheduledTime = scheduledTime,
                     createdAt = Clock.System.now().toEpochMilliseconds(),
+                    isImportant = isImportant ?: isRecurring,
+                    isUrgent = isUrgent ?: !isRecurring,
                 )
             )
             if (isRecurring && scheduledTime != null) {

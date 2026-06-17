@@ -7,9 +7,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.PriorityHigh
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -39,6 +42,8 @@ fun TaskEditDialog(
     var description by remember { mutableStateOf(task.description) }
     var isRecurring by remember { mutableStateOf(task.isRecurring) }
     var scheduledTime by remember { mutableStateOf(task.scheduledTime) }
+    var isUrgent by remember { mutableStateOf(task.isUrgent) }
+    var isImportant by remember { mutableStateOf(task.isImportant) }
     var showTimePicker by remember { mutableStateOf(false) }
 
     val initHour = scheduledTime?.split(":")?.getOrNull(0)?.toIntOrNull() ?: 8
@@ -110,6 +115,43 @@ fun TaskEditDialog(
                         }
                     }
                 }
+
+                Text(
+                    text = "Priority",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FilterChip(
+                        selected = isUrgent,
+                        onClick = { isUrgent = !isUrgent },
+                        label = { Text("Urgent") },
+                        leadingIcon = if (isUrgent) {
+                            { Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.padding(0.dp)) }
+                        } else null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                            selectedLabelColor = MaterialTheme.colorScheme.error,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.error,
+                        ),
+                    )
+                    FilterChip(
+                        selected = isImportant,
+                        onClick = { isImportant = !isImportant },
+                        label = { Text("Important") },
+                        leadingIcon = if (isImportant) {
+                            { Icon(Icons.Default.PriorityHigh, contentDescription = null, modifier = Modifier.padding(0.dp)) }
+                        } else null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
+                            selectedLabelColor = MaterialTheme.colorScheme.tertiary,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.tertiary,
+                        ),
+                    )
+                }
             }
         },
         confirmButton = {
@@ -125,6 +167,8 @@ fun TaskEditDialog(
                                 columnId = if (showRecurringToggle) {
                                     if (isRecurring) "recurring" else "temporary"
                                 } else task.columnId,
+                                isUrgent = isUrgent,
+                                isImportant = isImportant,
                             )
                         )
                         onDismiss()

@@ -24,4 +24,6 @@ data class Task(
     val dueDate: Long? = null,
     val createdAt: Long = 0L,
     val order: Int = 0,
+    val isUrgent: Boolean = false,
+    val isImportant: Boolean = false,
 )

@@ -99,6 +99,8 @@ class FirebaseTaskRepository : TaskRepository {
             dueDate = getLong("dueDate"),
             createdAt = getLong("createdAt") ?: 0L,
             order = getLong("order")?.toInt() ?: 0,
+            isUrgent = getBoolean("isUrgent") ?: false,
+            isImportant = getBoolean("isImportant") ?: false,
         )
     }
 
@@ -116,5 +118,7 @@ class FirebaseTaskRepository : TaskRepository {
         "dueDate" to dueDate,
         "createdAt" to createdAt,
         "order" to order,
+        "isUrgent" to isUrgent,
+        "isImportant" to isImportant,
     )
 }
