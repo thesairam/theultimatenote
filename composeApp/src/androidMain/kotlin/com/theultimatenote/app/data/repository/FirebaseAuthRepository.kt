@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.userProfileChangeRequest
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -82,6 +83,52 @@ class FirebaseAuthRepository : AuthRepository {
 
     override suspend fun signOut() {
         auth.signOut()
+    }
+
+    override suspend fun deleteAccount(): AuthResult {
+        val user = auth.currentUser ?: return AuthResult.Error("No user signed in.")
+        val uid = user.uid
+        val db = FirebaseFirestore.getInstance()
+        return try {
+            // Delete user profile document
+            db.collection("users").document(uid).delete().await()
+
+            // Delete all user's projects and their tasks
+            val projectsSnapshot = db.collection("projects")
+                .whereEqualTo("ownerId", uid)
+                .get().await()
+
+            for (projectDoc in projectsSnapshot.documents) {
+                val tasksSnapshot = projectDoc.reference.collection("tasks").get().await()
+                for (taskDoc in tasksSnapshot.documents) {
+                    taskDoc.reference.delete().await()
+                }
+                projectDoc.reference.delete().await()
+            }
+
+            // Delete chat history
+            db.collection("users").document(uid).collection("chat_messages")
+                .get().await().documents.forEach { it.reference.delete().await() }
+
+            // Delete notebooks
+            val notebooksSnapshot = db.collection("notebooks")
+                .whereEqualTo("ownerId", uid)
+                .get().await()
+            for (notebookDoc in notebooksSnapshot.documents) {
+                val pagesSnapshot = notebookDoc.reference.collection("pages").get().await()
+                for (pageDoc in pagesSnapshot.documents) {
+                    pageDoc.reference.delete().await()
+                }
+                notebookDoc.reference.delete().await()
+            }
+
+            // Delete Firebase Auth account
+            user.delete().await()
+
+            AuthResult.Success(AuthUser(uid = uid, email = null, displayName = null))
+        } catch (e: Exception) {
+            AuthResult.Error(e.message ?: "Failed to delete account. You may need to sign in again before deleting.")
+        }
     }
 
     private fun com.google.firebase.auth.FirebaseUser.toAuthUser() = AuthUser(

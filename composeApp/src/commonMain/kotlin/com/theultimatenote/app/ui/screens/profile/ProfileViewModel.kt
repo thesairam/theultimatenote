@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theultimatenote.app.data.model.User
 import com.theultimatenote.app.data.repository.AuthRepository
+import com.theultimatenote.app.data.repository.AuthResult
 import com.theultimatenote.app.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,7 +20,9 @@ data class ProfileUiState(
     val user: User = User(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
+    val isDeleting: Boolean = false,
     val saveSuccess: Boolean = false,
+    val accountDeleted: Boolean = false,
     val error: String? = null,
 )
 
@@ -71,5 +74,19 @@ class ProfileViewModel(
 
     fun clearSaveSuccess() {
         _uiState.value = _uiState.value.copy(saveSuccess = false)
+    }
+
+    fun deleteAccount() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDeleting = true, error = null)
+            when (val result = authRepository.deleteAccount()) {
+                is AuthResult.Success -> {
+                    _uiState.value = _uiState.value.copy(isDeleting = false, accountDeleted = true)
+                }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(isDeleting = false, error = result.message)
+                }
+            }
+        }
     }
 }

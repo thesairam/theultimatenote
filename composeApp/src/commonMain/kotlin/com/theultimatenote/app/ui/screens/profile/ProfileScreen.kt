@@ -17,19 +17,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -42,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalUriHandler
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -52,6 +59,7 @@ fun ProfileScreen(
     val viewModel: ProfileViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(uiState.saveSuccess) {
         if (uiState.saveSuccess) {
@@ -63,6 +71,12 @@ fun ProfileScreen(
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
             snackbarHostState.showSnackbar(it)
+        }
+    }
+
+    LaunchedEffect(uiState.accountDeleted) {
+        if (uiState.accountDeleted) {
+            onNavigateBack()
         }
     }
 
@@ -193,6 +207,102 @@ fun ProfileScreen(
                     } else {
                         Text("Save Profile")
                     }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider(
+                    thickness = 0.75.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Legal",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    TextButton(onClick = { uriHandler.openUri("https://thesairam.github.io/theultimatenote/privacy-policy.html") }) {
+                        Text("Privacy Policy")
+                    }
+                    TextButton(onClick = { uriHandler.openUri("https://thesairam.github.io/theultimatenote/terms-of-service.html") }) {
+                        Text("Terms of Service")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider(
+                    thickness = 0.75.dp,
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.3f),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Danger Zone",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                var showDeleteConfirm by remember { mutableStateOf(false) }
+
+                OutlinedButton(
+                    onClick = { showDeleteConfirm = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                    enabled = !uiState.isDeleting,
+                ) {
+                    if (uiState.isDeleting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.DeleteForever,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.padding(start = 8.dp))
+                        Text("Delete Account")
+                    }
+                }
+
+                Text(
+                    text = "This permanently deletes your account, all projects, tasks, notebooks, and chat history. This action cannot be undone.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+
+                if (showDeleteConfirm) {
+                    AlertDialog(
+                        onDismissRequest = { showDeleteConfirm = false },
+                        title = { Text("Delete Account?") },
+                        text = {
+                            Text("This will permanently delete your account and all data (projects, tasks, notebooks, chat history). This cannot be undone.")
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    showDeleteConfirm = false
+                                    viewModel.deleteAccount()
+                                },
+                            ) {
+                                Text("Delete Everything", color = MaterialTheme.colorScheme.error)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDeleteConfirm = false }) {
+                                Text("Cancel")
+                            }
+                        },
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
