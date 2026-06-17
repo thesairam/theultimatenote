@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -141,7 +143,7 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                         shape = RoundedCornerShape(20.dp),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Row(
@@ -157,7 +159,7 @@ fun HomeScreen(
                                 Text(
                                     text = "${uiState.completedCount}/${uiState.totalCount}",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = MaterialTheme.colorScheme.tertiary,
                                 )
                             }
                             Spacer(modifier = Modifier.height(12.dp))
@@ -167,8 +169,8 @@ fun HomeScreen(
                                     else 0f
                                 },
                                 modifier = Modifier.fillMaxWidth().height(6.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                color = MaterialTheme.colorScheme.tertiary,
+                                trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
                             )
                         }
                     }
@@ -178,11 +180,7 @@ fun HomeScreen(
             if (uiState.dailyTasks.isNotEmpty()) {
                 item {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Today's Tasks",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    SectionHeader("Today's Tasks")
                 }
                 items(uiState.dailyTasks, key = { "home-daily-${it.id}" }) { task ->
                     HomeTaskItem(
@@ -197,11 +195,7 @@ fun HomeScreen(
             if (uiState.learningTasks.isNotEmpty()) {
                 item {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Learning",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    SectionHeader("Learning")
                 }
                 items(uiState.learningTasks, key = { "home-learn-${it.id}" }) { task ->
                     HomeTaskItem(
@@ -215,11 +209,7 @@ fun HomeScreen(
             if (uiState.projectTasks.isNotEmpty()) {
                 item {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Project Tasks",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    SectionHeader("Project Tasks")
                 }
                 items(uiState.projectTasks, key = { "home-proj-${it.task.id}" }) { taskWithProject ->
                     HomeTaskItem(
@@ -417,6 +407,25 @@ private fun QuickAddTaskDialog(
 }
 
 @Composable
+private fun SectionHeader(title: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            thickness = 0.75.dp,
+            color = MaterialTheme.colorScheme.outline,
+        )
+    }
+}
+
+@Composable
 private fun HomeTaskItem(
     task: Task,
     projectName: String? = null,
@@ -431,7 +440,7 @@ private fun HomeTaskItem(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),

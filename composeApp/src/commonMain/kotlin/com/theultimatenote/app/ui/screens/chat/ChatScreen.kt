@@ -278,7 +278,7 @@ private fun ActionCard(
             else MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
         ),
         shape = RoundedCornerShape(14.dp),
-        border = if (!action.executed) BorderStroke(0.5.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f))
+        border = if (!action.executed) BorderStroke(0.75.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f))
             else null,
     ) {
         Row(

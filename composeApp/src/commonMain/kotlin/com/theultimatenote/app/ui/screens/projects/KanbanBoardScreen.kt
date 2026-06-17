@@ -141,7 +141,7 @@ private fun KanbanColumnCard(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
         ),
         shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -239,7 +239,7 @@ private fun TaskCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(

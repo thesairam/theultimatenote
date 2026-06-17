@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -176,11 +177,21 @@ fun DailyScreen() {
             }
 
             item {
-                Text(
-                    text = "Today's Tasks",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = "Today's Tasks",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        thickness = 0.75.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
             }
 
             val recurringTasks = dailyTasks.filter { it.isRecurring }
@@ -189,9 +200,9 @@ fun DailyScreen() {
             if (recurringTasks.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Recurring",
+                        text = "↻ Recurring",
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
                 items(recurringTasks, key = { "daily-${it.id}" }) { task ->
@@ -235,11 +246,21 @@ fun DailyScreen() {
 
             item {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Learning",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = "Learning",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        thickness = 0.75.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
             }
 
             if (learningTasks.isNotEmpty()) {
@@ -302,7 +323,7 @@ private fun DailyTaskItem(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
