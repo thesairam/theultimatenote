@@ -1,6 +1,7 @@
 package com.theultimatenote.app.ui.screens.projects
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,12 +47,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.KanbanColumn
 import com.theultimatenote.app.data.model.Task
+import com.theultimatenote.app.ui.components.TaskEditDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +60,7 @@ fun KanbanBoardScreen(
     viewModel: KanbanViewModel,
     projectName: String,
     onNavigateBack: () -> Unit,
+    isDailyProject: Boolean = false,
 ) {
     val board by viewModel.board.collectAsState()
     val tasks by viewModel.tasks.collectAsState()
@@ -105,10 +107,12 @@ fun KanbanBoardScreen(
                         column = column,
                         tasks = columnTasks,
                         allColumns = columns,
+                        isDailyProject = isDailyProject,
                         onAddTask = { title -> viewModel.addTask(title, column.id) },
                         onMoveTask = { taskId, newColId -> viewModel.moveTask(taskId, newColId) },
                         onToggleComplete = { task -> viewModel.toggleTaskComplete(task) },
                         onDeleteTask = { taskId -> viewModel.deleteTask(taskId) },
+                        onEditTask = { task -> viewModel.updateTask(task) },
                     )
                 }
             }
@@ -121,10 +125,12 @@ private fun KanbanColumnCard(
     column: KanbanColumn,
     tasks: List<Task>,
     allColumns: List<KanbanColumn>,
+    isDailyProject: Boolean,
     onAddTask: (String) -> Unit,
     onMoveTask: (String, String) -> Unit,
     onToggleComplete: (Task) -> Unit,
     onDeleteTask: (String) -> Unit,
+    onEditTask: (Task) -> Unit,
 ) {
     var showAddTask by remember { mutableStateOf(false) }
     var newTaskTitle by remember { mutableStateOf("") }
@@ -132,9 +138,10 @@ private fun KanbanColumnCard(
     Card(
         modifier = Modifier.width(280.dp).fillMaxHeight(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
         ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -199,9 +206,11 @@ private fun KanbanColumnCard(
                     TaskCard(
                         task = task,
                         allColumns = allColumns,
+                        isDailyProject = isDailyProject,
                         onMove = { newColId -> onMoveTask(task.id, newColId) },
                         onToggleComplete = { onToggleComplete(task) },
                         onDelete = { onDeleteTask(task.id) },
+                        onEdit = onEditTask,
                     )
                 }
             }
@@ -213,20 +222,24 @@ private fun KanbanColumnCard(
 private fun TaskCard(
     task: Task,
     allColumns: List<KanbanColumn>,
+    isDailyProject: Boolean,
     onMove: (String) -> Unit,
     onToggleComplete: () -> Unit,
     onDelete: () -> Unit,
+    onEdit: (Task) -> Unit,
 ) {
     var showMoveMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { showEditDialog = true },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
@@ -304,6 +317,15 @@ private fun TaskCard(
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
             },
+        )
+    }
+
+    if (showEditDialog) {
+        TaskEditDialog(
+            task = task,
+            showRecurringToggle = isDailyProject,
+            onSave = { updated -> onEdit(updated) },
+            onDismiss = { showEditDialog = false },
         )
     }
 }

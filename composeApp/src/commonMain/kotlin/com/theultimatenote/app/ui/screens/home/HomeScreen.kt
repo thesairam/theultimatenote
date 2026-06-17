@@ -1,5 +1,7 @@
 package com.theultimatenote.app.ui.screens.home
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -53,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
+import com.theultimatenote.app.ui.components.TaskEditDialog
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,6 +110,7 @@ fun HomeScreen(
                 onClick = { showQuickAdd = true },
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.onTertiary,
+                shape = RoundedCornerShape(16.dp),
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Quick Add Task")
             }
@@ -115,11 +121,18 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Text(
-                    text = "Good day, ${uiState.userName}!",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Column {
+                    Text(
+                        text = "Good day,",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = "${uiState.userName} ✨",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
 
             if (uiState.totalCount > 0) {
@@ -127,22 +140,35 @@ fun HomeScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                        shape = RoundedCornerShape(20.dp),
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "${uiState.completedCount}/${uiState.totalCount} tasks completed",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "Today's Progress",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                )
+                                Text(
+                                    text = "${uiState.completedCount}/${uiState.totalCount}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
                             LinearProgressIndicator(
                                 progress = {
                                     if (uiState.totalCount > 0) uiState.completedCount.toFloat() / uiState.totalCount
                                     else 0f
                                 },
-                                modifier = Modifier.fillMaxWidth().height(8.dp),
+                                modifier = Modifier.fillMaxWidth().height(6.dp),
                                 color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                             )
                         }
                     }
@@ -151,39 +177,48 @@ fun HomeScreen(
 
             if (uiState.dailyTasks.isNotEmpty()) {
                 item {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Today's Tasks",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
                 items(uiState.dailyTasks, key = { "home-daily-${it.id}" }) { task ->
-                    HomeTaskItem(task = task, onToggle = { viewModel.toggleTaskComplete(task) })
+                    HomeTaskItem(
+                        task = task,
+                        isDailyProject = true,
+                        onToggle = { viewModel.toggleTaskComplete(task) },
+                        onEdit = { viewModel.updateTask(it) },
+                    )
                 }
             }
 
             if (uiState.learningTasks.isNotEmpty()) {
                 item {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Learning",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
                 items(uiState.learningTasks, key = { "home-learn-${it.id}" }) { task ->
-                    HomeTaskItem(task = task, onToggle = { viewModel.toggleTaskComplete(task) })
+                    HomeTaskItem(
+                        task = task,
+                        onToggle = { viewModel.toggleTaskComplete(task) },
+                        onEdit = { viewModel.updateTask(it) },
+                    )
                 }
             }
 
             if (uiState.projectTasks.isNotEmpty()) {
                 item {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Project Tasks",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
                 items(uiState.projectTasks, key = { "home-proj-${it.task.id}" }) { taskWithProject ->
@@ -191,6 +226,7 @@ fun HomeScreen(
                         task = taskWithProject.task,
                         projectName = taskWithProject.projectName,
                         onToggle = { viewModel.toggleTaskComplete(taskWithProject.task) },
+                        onEdit = { viewModel.updateTask(it) },
                     )
                 }
             }
@@ -384,54 +420,75 @@ private fun QuickAddTaskDialog(
 private fun HomeTaskItem(
     task: Task,
     projectName: String? = null,
+    isDailyProject: Boolean = false,
     onToggle: () -> Unit,
+    onEdit: (Task) -> Unit = {},
 ) {
+    var showEditDialog by remember { mutableStateOf(false) }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { showEditDialog = true },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(
                 checked = task.isCompletedToday,
                 onCheckedChange = { onToggle() },
+                modifier = Modifier.size(24.dp),
             )
-            Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(
                     text = task.title,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         textDecoration = if (task.isCompletedToday) TextDecoration.LineThrough else TextDecoration.None,
                     ),
+                    color = if (task.isCompletedToday) MaterialTheme.colorScheme.onSurfaceVariant
+                        else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (task.isRecurring) {
-                        Text(
-                            text = "Recurring",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.tertiary,
-                        )
-                    }
-                    if (projectName != null) {
-                        Text(
-                            text = projectName,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary,
-                        )
-                    }
-                    if (task.scheduledTime != null) {
-                        Text(
-                            text = task.scheduledTime,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                if (task.isRecurring || projectName != null || task.scheduledTime != null) {
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (task.isRecurring) {
+                            Text(
+                                text = "↻ Recurring",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                            )
+                        }
+                        if (projectName != null) {
+                            Text(
+                                text = projectName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
+                        }
+                        if (task.scheduledTime != null) {
+                            Text(
+                                text = "⏰ ${task.scheduledTime}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+
+    if (showEditDialog) {
+        TaskEditDialog(
+            task = task,
+            showRecurringToggle = isDailyProject,
+            onSave = { updated -> onEdit(updated) },
+            onDismiss = { showEditDialog = false },
+        )
     }
 }

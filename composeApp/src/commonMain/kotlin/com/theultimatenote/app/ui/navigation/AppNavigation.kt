@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CalendarToday
@@ -51,7 +52,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Serializable data object ForgotPasswordRoute
 @Serializable data object HomeRoute
 @Serializable data object ProjectsRoute
-@Serializable data class KanbanBoardRoute(val projectId: String, val projectName: String)
+@Serializable data class KanbanBoardRoute(val projectId: String, val projectName: String, val projectType: String = "REGULAR")
 @Serializable data object DailyRoute
 @Serializable data object NotebooksRoute
 @Serializable data object ProfileRoute
@@ -165,8 +166,8 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
             }
             composable<ProjectsRoute> {
                 ProjectsScreen(
-                    onNavigateToBoard = { projectId, projectName ->
-                        navController.navigate(KanbanBoardRoute(projectId, projectName))
+                    onNavigateToBoard = { projectId, projectName, projectType ->
+                        navController.navigate(KanbanBoardRoute(projectId, projectName, projectType))
                     },
                 )
             }
@@ -180,6 +181,7 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
                     viewModel = kanbanViewModel,
                     projectName = route.projectName,
                     onNavigateBack = { navController.popBackStack() },
+                    isDailyProject = route.projectType == "DAILY",
                 )
             }
             composable<DailyRoute> { DailyScreen() }

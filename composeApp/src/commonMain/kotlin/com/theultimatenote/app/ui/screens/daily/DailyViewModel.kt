@@ -6,6 +6,7 @@ import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.data.repository.AuthRepository
+import com.theultimatenote.app.data.repository.NotificationScheduler
 import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.data.repository.TaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,6 +26,7 @@ class DailyViewModel(
     private val projectRepository: ProjectRepository,
     private val taskRepository: TaskRepository,
     private val authRepository: AuthRepository,
+    private val notificationScheduler: NotificationScheduler,
 ) : ViewModel() {
 
     private val allProjects = authRepository.currentUser
@@ -57,7 +59,7 @@ class DailyViewModel(
         if (title.isBlank()) return
         val columnId = if (isRecurring) "recurring" else "temporary"
         viewModelScope.launch {
-            taskRepository.createTask(
+            val taskId = taskRepository.createTask(
                 Task(
                     title = title.trim(),
                     projectId = project.id,
@@ -67,6 +69,9 @@ class DailyViewModel(
                     createdAt = Clock.System.now().toEpochMilliseconds(),
                 )
             )
+            if (isRecurring && scheduledTime != null) {
+                scheduleNotification(taskId, title.trim(), scheduledTime)
+            }
         }
     }
 
@@ -98,9 +103,30 @@ class DailyViewModel(
         }
     }
 
+    fun updateTask(task: Task) {
+        viewModelScope.launch {
+            taskRepository.updateTask(task)
+            if (task.isRecurring && task.scheduledTime != null) {
+                scheduleNotification(task.id, task.title, task.scheduledTime)
+            } else {
+                notificationScheduler.cancelTaskReminder(task.id)
+            }
+        }
+    }
+
     fun deleteTask(task: Task) {
         viewModelScope.launch {
+            notificationScheduler.cancelTaskReminder(task.id)
             taskRepository.deleteTask(task.id, task.projectId)
+        }
+    }
+
+    private fun scheduleNotification(taskId: String, title: String, time: String) {
+        val parts = time.split(":")
+        if (parts.size == 2) {
+            val hour = parts[0].toIntOrNull() ?: return
+            val minute = parts[1].toIntOrNull() ?: return
+            notificationScheduler.scheduleTaskReminder(taskId, title, hour, minute)
         }
     }
 }

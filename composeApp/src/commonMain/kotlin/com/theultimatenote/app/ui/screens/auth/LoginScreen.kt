@@ -1,5 +1,6 @@
 package com.theultimatenote.app.ui.screens.auth
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -57,6 +59,7 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -68,12 +71,13 @@ fun LoginScreen(
             color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center,
         )
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "Plan. Learn. Journal. Grow.",
+            text = "Plan · Learn · Journal · Grow",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp, bottom = 48.dp),
         )
+        Spacer(modifier = Modifier.height(48.dp))
 
         OutlinedTextField(
             value = email,
@@ -134,8 +138,9 @@ fun LoginScreen(
 
         Button(
             onClick = { viewModel.signIn(email, password) },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
             enabled = !uiState.isLoading,
+            shape = RoundedCornerShape(14.dp),
         ) {
             if (uiState.isLoading) {
                 CircularProgressIndicator(

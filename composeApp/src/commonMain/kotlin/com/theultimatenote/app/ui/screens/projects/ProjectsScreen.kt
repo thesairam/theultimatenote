@@ -1,5 +1,6 @@
 package com.theultimatenote.app.ui.screens.projects
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
@@ -50,7 +52,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectsScreen(
-    onNavigateToBoard: (projectId: String, projectName: String) -> Unit = { _, _ -> },
+    onNavigateToBoard: (projectId: String, projectName: String, projectType: String) -> Unit = { _, _, _ -> },
 ) {
     val viewModel: ProjectsViewModel = koinViewModel()
     val projects by viewModel.projects.collectAsState()
@@ -76,6 +78,7 @@ fun ProjectsScreen(
                 onClick = { showCreateDialog = true },
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.onTertiary,
+                shape = RoundedCornerShape(16.dp),
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Create Project")
             }
@@ -107,7 +110,7 @@ fun ProjectsScreen(
                 items(projects, key = { it.id }) { project ->
                     ProjectCard(
                         project = project,
-                        onClick = { onNavigateToBoard(project.id, project.name) },
+                        onClick = { onNavigateToBoard(project.id, project.name, project.type.name) },
                         onDelete = { viewModel.deleteProject(project) },
                     )
                 }
@@ -148,17 +151,19 @@ private fun ProjectCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(36.dp),
             )
             Column(
                 modifier = Modifier.weight(1f).padding(start = 16.dp),
@@ -168,18 +173,20 @@ private fun ProjectCard(
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = typeLabel,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (project.isDeletable) {
-                IconButton(onClick = onDelete) {
+                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.error,
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }

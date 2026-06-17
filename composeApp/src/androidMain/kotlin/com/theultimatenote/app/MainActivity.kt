@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        AndroidAppContext.init(this)
         NotificationHelper.createNotificationChannels(this)
         NotificationHelper.scheduleMorningMotivation(this)
         requestNotificationPermission()

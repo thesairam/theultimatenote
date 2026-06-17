@@ -1,5 +1,6 @@
 package com.theultimatenote.app.di
 
+import com.theultimatenote.app.AndroidAppContext
 import com.theultimatenote.app.BuildConfig
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.ChatRepository
@@ -11,9 +12,11 @@ import com.theultimatenote.app.data.repository.FirebaseTaskRepository
 import com.theultimatenote.app.data.repository.FirebaseUserRepository
 import com.theultimatenote.app.data.repository.GeminiService
 import com.theultimatenote.app.data.repository.NotebookRepository
+import com.theultimatenote.app.data.repository.NotificationScheduler
 import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.data.repository.TaskRepository
 import com.theultimatenote.app.data.repository.UserRepository
+import com.theultimatenote.app.notifications.AndroidNotificationScheduler
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -25,4 +28,5 @@ actual fun platformModule(): Module = module {
     single<UserRepository> { FirebaseUserRepository() }
     single<ChatRepository> { FirebaseChatRepository() }
     single { GeminiService(BuildConfig.GEMINI_API_KEY) }
+    single<NotificationScheduler> { AndroidNotificationScheduler(AndroidAppContext.context) }
 }

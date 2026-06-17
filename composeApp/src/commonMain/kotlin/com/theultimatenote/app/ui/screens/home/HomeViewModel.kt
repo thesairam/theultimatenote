@@ -6,6 +6,7 @@ import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.data.repository.AuthRepository
+import com.theultimatenote.app.data.repository.NotificationScheduler
 import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.data.repository.TaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -41,6 +42,7 @@ class HomeViewModel(
     private val authRepository: AuthRepository,
     private val projectRepository: ProjectRepository,
     private val taskRepository: TaskRepository,
+    private val notificationScheduler: NotificationScheduler,
 ) : ViewModel() {
 
     private val allProjects = authRepository.currentUser
@@ -115,6 +117,24 @@ class HomeViewModel(
         }
     }
 
+    fun updateTask(task: Task) {
+        viewModelScope.launch {
+            taskRepository.updateTask(task)
+            if (task.isRecurring && task.scheduledTime != null) {
+                val parts = task.scheduledTime.split(":")
+                if (parts.size == 2) {
+                    val hour = parts[0].toIntOrNull()
+                    val minute = parts[1].toIntOrNull()
+                    if (hour != null && minute != null) {
+                        notificationScheduler.scheduleTaskReminder(task.id, task.title, hour, minute)
+                    }
+                }
+            } else {
+                notificationScheduler.cancelTaskReminder(task.id)
+            }
+        }
+    }
+
     fun quickAddTask(
         title: String,
         projectId: String,
@@ -135,7 +155,7 @@ class HomeViewModel(
                     board?.columns?.minByOrNull { it.order }?.id ?: "planning"
                 }
             }
-            taskRepository.createTask(
+            val taskId = taskRepository.createTask(
                 Task(
                     title = title.trim(),
                     projectId = projectId,
@@ -145,6 +165,16 @@ class HomeViewModel(
                     createdAt = Clock.System.now().toEpochMilliseconds(),
                 )
             )
+            if (isRecurring && scheduledTime != null) {
+                val parts = scheduledTime.split(":")
+                if (parts.size == 2) {
+                    val hour = parts[0].toIntOrNull()
+                    val minute = parts[1].toIntOrNull()
+                    if (hour != null && minute != null) {
+                        notificationScheduler.scheduleTaskReminder(taskId, title.trim(), hour, minute)
+                    }
+                }
+            }
         }
     }
 }

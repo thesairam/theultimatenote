@@ -68,6 +68,12 @@ class KanbanViewModel(
         }
     }
 
+    fun updateTask(task: Task) {
+        viewModelScope.launch {
+            taskRepository.updateTask(task)
+        }
+    }
+
     fun deleteTask(taskId: String) {
         viewModelScope.launch {
             taskRepository.deleteTask(taskId, projectId)

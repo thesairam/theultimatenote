@@ -1,5 +1,6 @@
 package com.theultimatenote.app.ui.screens.notebooks
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
@@ -102,6 +104,7 @@ private fun NotebooksListView(viewModel: NotebooksViewModel) {
                 onClick = { showCreateDialog = true },
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.onTertiary,
+                shape = RoundedCornerShape(16.dp),
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Create Notebook")
             }
@@ -165,10 +168,12 @@ private fun NotebookCard(
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -180,6 +185,7 @@ private fun NotebookCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (notebook.projectId != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Project notebook",
                         style = MaterialTheme.typography.labelSmall,
@@ -187,11 +193,12 @@ private fun NotebookCard(
                     )
                 }
             }
-            IconButton(onClick = { showDeleteConfirm = true }) {
+            IconButton(onClick = { showDeleteConfirm = true }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error,
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
@@ -247,6 +254,7 @@ private fun PagesListView(
                 onClick = { showCreateDialog = true },
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 contentColor = MaterialTheme.colorScheme.onTertiary,
+                shape = RoundedCornerShape(16.dp),
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Page")
             }
@@ -310,10 +318,12 @@ private fun PageCard(
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -335,11 +345,12 @@ private fun PageCard(
                     )
                 }
             }
-            IconButton(onClick = { showDeleteConfirm = true }) {
+            IconButton(onClick = { showDeleteConfirm = true }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error,
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }

@@ -1,5 +1,7 @@
 package com.theultimatenote.app.ui.screens.daily
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -46,6 +50,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.Task
+import com.theultimatenote.app.ui.components.TaskEditDialog
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,6 +85,7 @@ fun DailyScreen() {
                     onClick = { showAddTask = true },
                     containerColor = MaterialTheme.colorScheme.tertiary,
                     contentColor = MaterialTheme.colorScheme.onTertiary,
+                    shape = RoundedCornerShape(16.dp),
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Add Task")
                 }
@@ -193,6 +199,7 @@ fun DailyScreen() {
                         task = task,
                         onToggle = { viewModel.toggleTaskComplete(task) },
                         onDelete = { viewModel.deleteTask(task) },
+                        onEdit = { viewModel.updateTask(it) },
                     )
                 }
             }
@@ -210,6 +217,7 @@ fun DailyScreen() {
                         task = task,
                         onToggle = { viewModel.toggleTaskComplete(task) },
                         onDelete = { viewModel.deleteTask(task) },
+                        onEdit = { viewModel.updateTask(it) },
                     )
                 }
             }
@@ -240,6 +248,7 @@ fun DailyScreen() {
                         task = task,
                         onToggle = { viewModel.toggleTaskComplete(task) },
                         onDelete = { viewModel.deleteTask(task) },
+                        onEdit = { viewModel.updateTask(it) },
                     )
                 }
             } else {
@@ -284,21 +293,27 @@ private fun DailyTaskItem(
     task: Task,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
+    onEdit: (Task) -> Unit,
 ) {
+    var showEditDialog by remember { mutableStateOf(false) }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { showEditDialog = true },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(
                 checked = task.isCompletedToday,
                 onCheckedChange = { onToggle() },
+                modifier = Modifier.size(24.dp),
             )
-            Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(
                     text = task.title,
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -309,30 +324,43 @@ private fun DailyTaskItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (task.isRecurring) {
-                        Text(
-                            text = "Recurring",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.tertiary,
-                        )
-                    }
-                    if (task.scheduledTime != null) {
-                        Text(
-                            text = task.scheduledTime,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                if (task.isRecurring || task.scheduledTime != null) {
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (task.isRecurring) {
+                            Text(
+                                text = "↻ Recurring",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                            )
+                        }
+                        if (task.scheduledTime != null) {
+                            Text(
+                                text = "⏰ ${task.scheduledTime}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }
-            IconButton(onClick = onDelete) {
+            IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
+    }
+
+    if (showEditDialog) {
+        TaskEditDialog(
+            task = task,
+            showRecurringToggle = true,
+            onSave = { updated -> onEdit(updated) },
+            onDismiss = { showEditDialog = false },
+        )
     }
 }

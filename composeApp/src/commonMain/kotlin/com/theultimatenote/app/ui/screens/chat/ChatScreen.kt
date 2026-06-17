@@ -1,5 +1,6 @@
 package com.theultimatenote.app.ui.screens.chat
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +45,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.ChatAction
 import com.theultimatenote.app.data.model.ChatMessage
@@ -56,6 +63,7 @@ fun ChatScreen(
     val viewModel: ChatViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState()
     var inputText by remember { mutableStateOf("") }
+    var enterSends by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(uiState.messages.size) {
@@ -128,15 +136,44 @@ fun ChatScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
+                IconButton(
+                    onClick = { enterSends = !enterSends },
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardReturn,
+                        contentDescription = if (enterSends) "Enter sends message" else "Enter adds newline",
+                        tint = if (enterSends) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 OutlinedTextField(
                     value = inputText,
                     onValueChange = { inputText = it },
-                    placeholder = { Text("Ask me anything...") },
-                    modifier = Modifier.weight(1f),
-                    maxLines = 3,
+                    placeholder = {
+                        Text(
+                            if (enterSends) "Enter to send..."
+                            else "Shift+Enter to send...",
+                        )
+                    },
+                    modifier = Modifier.weight(1f).onPreviewKeyEvent { event ->
+                        if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                            if (enterSends) {
+                                if (inputText.isNotBlank() && !uiState.isLoading) {
+                                    viewModel.sendMessage(inputText)
+                                    inputText = ""
+                                }
+                                true
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
+                    },
+                    maxLines = 6,
                     shape = RoundedCornerShape(24.dp),
                 )
                 IconButton(
@@ -177,23 +214,23 @@ private fun ChatBubble(
                 .widthIn(max = 300.dp)
                 .clip(
                     RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (isUser) 16.dp else 4.dp,
-                        bottomEnd = if (isUser) 4.dp else 16.dp,
+                        topStart = 18.dp,
+                        topEnd = 18.dp,
+                        bottomStart = if (isUser) 18.dp else 4.dp,
+                        bottomEnd = if (isUser) 4.dp else 18.dp,
                     )
                 )
                 .background(
                     if (isUser) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surfaceVariant
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                 )
-                .padding(12.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
         ) {
             Text(
                 text = message.content,
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (isUser) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
+                else MaterialTheme.colorScheme.onSurface,
             )
         }
 
@@ -237,10 +274,12 @@ private fun ActionCard(
         modifier = Modifier.widthIn(max = 300.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (action.executed)
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            else MaterialTheme.colorScheme.tertiaryContainer,
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            else MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
         ),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
+        border = if (!action.executed) BorderStroke(0.5.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f))
+            else null,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),

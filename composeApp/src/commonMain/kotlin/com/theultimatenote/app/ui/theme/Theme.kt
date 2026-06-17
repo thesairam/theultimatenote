@@ -1,55 +1,70 @@
 package com.theultimatenote.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 
 private val LightColorScheme = lightColorScheme(
-    primary = WarmBrown,
+    primary = ForestGreen,
     onPrimary = WarmWhite,
-    primaryContainer = LightBrown,
-    onPrimaryContainer = DarkChocolate,
-    secondary = Caramel,
+    primaryContainer = PaleGreen,
+    onPrimaryContainer = DarkForest,
+    secondary = SageGreen,
     onSecondary = WarmWhite,
-    secondaryContainer = LightBrown.copy(alpha = 0.4f),
-    onSecondaryContainer = DeepBrown,
-    tertiary = MutedGold,
-    onTertiary = DarkChocolate,
-    tertiaryContainer = LightGold,
-    onTertiaryContainer = DeepBrown,
+    secondaryContainer = MintMist.copy(alpha = 0.5f),
+    onSecondaryContainer = DeepForest,
+    tertiary = WarmGold,
+    onTertiary = DarkForest,
+    tertiaryContainer = PaleGold,
+    onTertiaryContainer = DeepForest,
     background = SoftCream,
-    onBackground = DarkChocolate,
+    onBackground = DarkForest,
     surface = WarmWhite,
-    onSurface = DarkChocolate,
-    surfaceVariant = WarmLightBeige,
-    onSurfaceVariant = WarmBrown,
-    error = ErrorRed,
-    outline = SoftBrown,
+    onSurface = DarkForest,
+    surfaceVariant = IvoryCream,
+    onSurfaceVariant = SageGreen,
+    error = SoftRose,
+    outline = CardBorder,
+    outlineVariant = CardBorder.copy(alpha = 0.5f),
+    surfaceTint = ForestGreen.copy(alpha = 0.04f),
 )
 
 private val DarkColorScheme = darkColorScheme(
     primary = OnDarkPrimary,
-    onPrimary = DarkChocolate,
-    primaryContainer = DeepBrown,
+    onPrimary = DarkForest,
+    primaryContainer = DeepForest,
     onPrimaryContainer = OnDarkPrimary,
     secondary = OnDarkSecondary,
-    onSecondary = DarkChocolate,
-    secondaryContainer = Caramel.copy(alpha = 0.3f),
+    onSecondary = DarkForest,
+    secondaryContainer = SageGreen.copy(alpha = 0.3f),
     onSecondaryContainer = OnDarkSecondary,
-    tertiary = MutedGold,
-    onTertiary = DarkChocolate,
-    tertiaryContainer = MutedGold.copy(alpha = 0.2f),
+    tertiary = WarmGold,
+    onTertiary = DarkForest,
+    tertiaryContainer = WarmGold.copy(alpha = 0.2f),
     onTertiaryContainer = LightGold,
     background = DarkBackground,
-    onBackground = WarmLightBeige,
+    onBackground = PaleGreen,
     surface = DarkSurface,
-    onSurface = WarmLightBeige,
+    onSurface = PaleGreen,
     surfaceVariant = DarkSurfaceVariant,
     onSurfaceVariant = OnDarkSecondary,
     error = ErrorRed,
-    outline = SoftBrown.copy(alpha = 0.5f),
+    outline = DarkCardBorder,
+    outlineVariant = DarkCardBorder.copy(alpha = 0.5f),
+    surfaceTint = OnDarkPrimary.copy(alpha = 0.05f),
+)
+
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 @Composable
@@ -62,6 +77,7 @@ fun UltimateNoteTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = AppTypography,
+        shapes = AppShapes,
         content = content,
     )
 }
