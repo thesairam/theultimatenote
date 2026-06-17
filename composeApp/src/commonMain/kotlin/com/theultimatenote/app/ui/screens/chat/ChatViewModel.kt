@@ -8,7 +8,7 @@ import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.ChatRepository
-import com.theultimatenote.app.data.repository.GeminiService
+import com.theultimatenote.app.data.repository.AiService
 import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.data.repository.TaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,7 +30,7 @@ data class ChatUiState(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChatViewModel(
-    private val geminiService: GeminiService,
+    private val aiService: AiService,
     private val authRepository: AuthRepository,
     private val chatRepository: ChatRepository,
     private val projectRepository: ProjectRepository,
@@ -88,7 +88,7 @@ class ChatViewModel(
             val conversationHistory = _uiState.value.messages
                 .filter { it.id != "welcome" }
 
-            val rawReply = geminiService.chat(conversationHistory, systemContext)
+            val rawReply = aiService.chat(conversationHistory, systemContext)
 
             val (cleanContent, actions) = parseActions(rawReply)
 

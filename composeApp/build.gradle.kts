@@ -80,13 +80,20 @@ android {
 
     defaultConfig {
         val localPropsFile = rootProject.file("local.properties")
-        val geminiKey = if (localPropsFile.exists()) {
+        val props = if (localPropsFile.exists()) {
             Properties().apply { load(localPropsFile.inputStream()) }
-                .getProperty("GEMINI_API_KEY", "")
         } else {
-            project.findProperty("GEMINI_API_KEY")?.toString() ?: ""
+            Properties()
         }
-        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
+        val geminiKey1 = props.getProperty("GEMINI_API_KEY_1", "")
+            .ifBlank { project.findProperty("GEMINI_API_KEY_1")?.toString() ?: "" }
+        val geminiKey2 = props.getProperty("GEMINI_API_KEY_2", "")
+            .ifBlank { project.findProperty("GEMINI_API_KEY_2")?.toString() ?: "" }
+        val groqKey = props.getProperty("GROQ_API_KEY", "")
+            .ifBlank { project.findProperty("GROQ_API_KEY")?.toString() ?: "" }
+        buildConfigField("String", "GEMINI_API_KEY_1", "\"$geminiKey1\"")
+        buildConfigField("String", "GEMINI_API_KEY_2", "\"$geminiKey2\"")
+        buildConfigField("String", "GROQ_API_KEY", "\"$groqKey\"")
     }
 
     compileOptions {

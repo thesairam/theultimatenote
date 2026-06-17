@@ -10,7 +10,7 @@ import com.theultimatenote.app.data.repository.FirebaseNotebookRepository
 import com.theultimatenote.app.data.repository.FirebaseProjectRepository
 import com.theultimatenote.app.data.repository.FirebaseTaskRepository
 import com.theultimatenote.app.data.repository.FirebaseUserRepository
-import com.theultimatenote.app.data.repository.GeminiService
+import com.theultimatenote.app.data.repository.AiService
 import com.theultimatenote.app.data.repository.NotebookRepository
 import com.theultimatenote.app.data.repository.NotificationScheduler
 import com.theultimatenote.app.data.repository.ProjectRepository
@@ -27,6 +27,6 @@ actual fun platformModule(): Module = module {
     single<NotebookRepository> { FirebaseNotebookRepository() }
     single<UserRepository> { FirebaseUserRepository() }
     single<ChatRepository> { FirebaseChatRepository() }
-    single { GeminiService(BuildConfig.GEMINI_API_KEY) }
+    single { AiService(groqApiKey = BuildConfig.GROQ_API_KEY, geminiApiKeys = listOf(BuildConfig.GEMINI_API_KEY_1, BuildConfig.GEMINI_API_KEY_2)) }
     single<NotificationScheduler> { AndroidNotificationScheduler(AndroidAppContext.context) }
 }
