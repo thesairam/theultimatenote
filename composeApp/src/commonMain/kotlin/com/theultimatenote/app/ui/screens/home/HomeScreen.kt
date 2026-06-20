@@ -243,8 +243,8 @@ fun HomeScreen(
     if (showQuickAdd) {
         QuickAddTaskDialog(
             projects = projects,
-            onAdd = { title, projectId, isRecurring, scheduledTime ->
-                viewModel.quickAddTask(title, projectId, isRecurring, scheduledTime)
+            onAdd = { title, projectId, isRecurring, scheduledTime, isUrgent, isImportant ->
+                viewModel.quickAddTask(title, projectId, isRecurring, scheduledTime, isUrgent, isImportant)
             },
             onDismiss = { showQuickAdd = false },
         )
@@ -271,7 +271,7 @@ fun HomeScreen(
 @Composable
 private fun QuickAddTaskDialog(
     projects: List<Project>,
-    onAdd: (String, String, Boolean, String?) -> Unit,
+    onAdd: (String, String, Boolean, String?, Boolean, Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var taskTitle by remember { mutableStateOf("") }
@@ -280,6 +280,8 @@ private fun QuickAddTaskDialog(
     var isRecurring by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var scheduledTime by remember { mutableStateOf<String?>(null) }
+    var isUrgent by remember { mutableStateOf(false) }
+    var isImportant by remember { mutableStateOf(true) }
     val timePickerState = rememberTimePickerState(initialHour = 8, initialMinute = 0, is24Hour = false)
 
     val isDailyProject = selectedProject?.type == ProjectType.DAILY
@@ -372,13 +374,36 @@ private fun QuickAddTaskDialog(
                         }
                     }
                 }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FilterChip(
+                        selected = isUrgent,
+                        onClick = { isUrgent = !isUrgent },
+                        label = { Text("Urgent") },
+                        leadingIcon = if (isUrgent) {
+                            { Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                    )
+                    FilterChip(
+                        selected = isImportant,
+                        onClick = { isImportant = !isImportant },
+                        label = { Text("Important") },
+                        leadingIcon = if (isImportant) {
+                            { Icon(Icons.Default.PriorityHigh, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
                     if (taskTitle.isNotBlank() && selectedProject != null) {
-                        onAdd(taskTitle.trim(), selectedProject!!.id, isRecurring, scheduledTime)
+                        onAdd(taskTitle.trim(), selectedProject!!.id, isRecurring, scheduledTime, isUrgent, isImportant)
                         onDismiss()
                     }
                 },

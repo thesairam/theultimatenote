@@ -164,6 +164,8 @@ class HomeViewModel(
         projectId: String,
         isRecurring: Boolean = false,
         scheduledTime: String? = null,
+        isUrgent: Boolean = false,
+        isImportant: Boolean = true,
     ) {
         if (title.isBlank() || projectId.isBlank()) return
         viewModelScope.launch {
@@ -186,6 +188,8 @@ class HomeViewModel(
                     columnId = columnId,
                     isRecurring = isRecurring,
                     scheduledTime = scheduledTime,
+                    isUrgent = isUrgent,
+                    isImportant = isImportant,
                     createdAt = Clock.System.now().toEpochMilliseconds(),
                 )
             )
