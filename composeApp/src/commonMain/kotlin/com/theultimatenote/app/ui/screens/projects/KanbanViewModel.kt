@@ -29,6 +29,9 @@ class KanbanViewModel(
     val tasks: StateFlow<List<Task>> = taskRepository.getTasksForProject(projectId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private val _showMatrix = MutableStateFlow(false)
+    val showMatrix: StateFlow<Boolean> = _showMatrix.asStateFlow()
+
     private val _isAddingTask = MutableStateFlow(false)
     val isAddingTask: StateFlow<Boolean> = _isAddingTask.asStateFlow()
 
@@ -74,6 +77,10 @@ class KanbanViewModel(
         viewModelScope.launch {
             taskRepository.updateTask(task)
         }
+    }
+
+    fun toggleView() {
+        _showMatrix.value = !_showMatrix.value
     }
 
     fun deleteTask(taskId: String) {

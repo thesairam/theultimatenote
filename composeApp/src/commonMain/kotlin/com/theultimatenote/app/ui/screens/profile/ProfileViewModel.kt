@@ -52,6 +52,8 @@ class ProfileViewModel(
                         isLoading = false,
                     )
                 }
+            } else {
+                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }
@@ -79,13 +81,8 @@ class ProfileViewModel(
     fun onCalendarConnected(provider: String, token: String) {
         _uiState.value = _uiState.value.copy(
             saveSuccess = false,
-            error = null,
+            error = "Calendar sync is not yet available. Coming soon!",
         )
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                saveSuccess = true,
-            )
-        }
     }
 
     fun openUrl(url: String) {

@@ -27,7 +27,6 @@ class FirebasePomodoroRepository : PomodoroRepository {
     override fun getSessionsForDate(userId: String, date: String): Flow<List<PomodoroSession>> {
         return sessionsCol(userId)
             .whereEqualTo("date", date)
-            .orderBy("startTime", Query.Direction.DESCENDING)
             .snapshots()
             .map { snapshot ->
                 snapshot.documents.mapNotNull { it.toSession() }

@@ -76,9 +76,8 @@ private suspend fun signInWithGoogle(
 private fun getWebClientId(context: Context): String {
     val resources = context.resources
     val resId = resources.getIdentifier("default_web_client_id", "string", context.packageName)
-    return if (resId != 0) {
-        context.getString(resId)
-    } else {
-        ""
+    if (resId == 0) {
+        throw IllegalStateException("Google Sign-In is not configured. Check google-services.json has OAuth client entries.")
     }
+    return context.getString(resId)
 }

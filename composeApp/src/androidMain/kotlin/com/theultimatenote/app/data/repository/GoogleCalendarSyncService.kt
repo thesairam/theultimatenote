@@ -92,10 +92,12 @@ class GoogleCalendarSyncService(private val context: Context) {
         val minute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
 
         val today = java.time.LocalDate.now()
-        val startDateTime = "${today}T%02d:%02d:00".format(hour, minute)
-        val endHour = if (minute + 30 >= 60) hour + 1 else hour
-        val endMinute = (minute + 30) % 60
-        val endDateTime = "${today}T%02d:%02d:00".format(endHour, endMinute)
+        val startTime = java.time.LocalTime.of(hour, minute)
+        val endTime = startTime.plusMinutes(30)
+        val startDate = today
+        val endDate = if (endTime.isBefore(startTime)) today.plusDays(1) else today
+        val startDateTime = "${startDate}T%02d:%02d:00".format(startTime.hour, startTime.minute)
+        val endDateTime = "${endDate}T%02d:%02d:00".format(endTime.hour, endTime.minute)
 
         val tz = java.util.TimeZone.getDefault().id
 

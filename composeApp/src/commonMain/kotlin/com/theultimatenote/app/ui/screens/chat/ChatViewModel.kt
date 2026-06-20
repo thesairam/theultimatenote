@@ -82,26 +82,33 @@ class ChatViewModel(
         )
 
         viewModelScope.launch {
-            chatRepository.saveMessage(userId!!, userMessage)
+            try {
+                chatRepository.saveMessage(userId!!, userMessage)
 
-            val systemContext = buildSystemContext()
-            val conversationHistory = _uiState.value.messages
-                .filter { it.id != "welcome" }
+                val systemContext = buildSystemContext()
+                val conversationHistory = _uiState.value.messages
+                    .filter { it.id != "welcome" }
 
-            val rawReply = aiService.chat(conversationHistory, systemContext)
+                val rawReply = aiService.chat(conversationHistory, systemContext)
 
-            val (cleanContent, actions) = parseActions(rawReply)
+                val (cleanContent, actions) = parseActions(rawReply)
 
-            val aiMessage = ChatMessage(
-                role = "model",
-                content = cleanContent,
-                timestamp = Clock.System.now().toEpochMilliseconds(),
-                actions = actions,
-            )
+                val aiMessage = ChatMessage(
+                    role = "model",
+                    content = cleanContent,
+                    timestamp = Clock.System.now().toEpochMilliseconds(),
+                    actions = actions,
+                )
 
-            chatRepository.saveMessage(userId!!, aiMessage)
+                chatRepository.saveMessage(userId!!, aiMessage)
 
-            _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Failed to get response. Please try again.",
+                )
+            }
         }
     }
 

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -57,6 +58,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit = {},
+    onSignOut: () -> Unit = {},
 ) {
     val viewModel: ProfileViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState()
@@ -78,7 +80,7 @@ fun ProfileScreen(
 
     LaunchedEffect(uiState.accountDeleted) {
         if (uiState.accountDeleted) {
-            onNavigateBack()
+            onSignOut()
         }
     }
 
@@ -265,6 +267,26 @@ fun ProfileScreen(
                     TextButton(onClick = { uriHandler.openUri("https://thesairam.github.io/theultimatenote/terms-of-service.html") }) {
                         Text("Terms of Service")
                     }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider(
+                    thickness = 0.75.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedButton(
+                    onClick = onSignOut,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.padding(start = 8.dp))
+                    Text("Sign Out")
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

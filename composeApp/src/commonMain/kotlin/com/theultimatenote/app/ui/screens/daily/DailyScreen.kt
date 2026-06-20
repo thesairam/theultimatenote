@@ -237,12 +237,14 @@ fun DailyScreen() {
                                 horizontalArrangement = Arrangement.End,
                             ) {
                                 IconButton(onClick = {
-                                    viewModel.addDailyTask(newTaskTitle, isRecurring, scheduledTime, isUrgent, isImportant)
-                                    newTaskTitle = ""
-                                    scheduledTime = null
-                                    isImportant = true
-                                    isUrgent = false
-                                    showAddTask = false
+                                    if (newTaskTitle.isNotBlank()) {
+                                        viewModel.addDailyTask(newTaskTitle, isRecurring, scheduledTime, isUrgent, isImportant)
+                                        newTaskTitle = ""
+                                        scheduledTime = null
+                                        isImportant = true
+                                        isUrgent = false
+                                        showAddTask = false
+                                    }
                                 }) {
                                     Icon(Icons.Default.Check, contentDescription = "Add", tint = MaterialTheme.colorScheme.primary)
                                 }

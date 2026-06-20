@@ -17,12 +17,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -89,16 +89,9 @@ fun HomeScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = onNavigateToStats) {
-                        Icon(
-                            Icons.Default.BarChart,
-                            contentDescription = "Stats",
-                            tint = MaterialTheme.colorScheme.tertiary,
-                        )
-                    }
                     IconButton(onClick = onNavigateToChat) {
                         Icon(
-                            Icons.AutoMirrored.Filled.Chat,
+                            Icons.Default.AutoAwesome,
                             contentDescription = "AI Chat",
                             tint = MaterialTheme.colorScheme.tertiary,
                         )
@@ -107,13 +100,6 @@ fun HomeScreen(
                         Icon(
                             Icons.Default.AccountCircle,
                             contentDescription = "Profile",
-                            tint = MaterialTheme.colorScheme.tertiary,
-                        )
-                    }
-                    IconButton(onClick = onSignOut) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Sign Out",
                             tint = MaterialTheme.colorScheme.tertiary,
                         )
                     }
@@ -270,7 +256,12 @@ fun HomeScreen(
             onComplete = { minutes ->
                 viewModel.savePomodoroSession(task, minutes)
             },
-            onCancel = { pomodoroTask = null },
+            onCancel = { elapsedMinutes ->
+                if (elapsedMinutes > 0) {
+                    viewModel.savePomodoroSession(task, elapsedMinutes)
+                }
+                pomodoroTask = null
+            },
             onDismiss = { pomodoroTask = null },
         )
     }
@@ -512,13 +503,13 @@ private fun HomeTaskItem(
             if (!task.isCompletedToday) {
                 IconButton(
                     onClick = onStartPomodoro,
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
                         Icons.Default.PlayArrow,
                         contentDescription = "Start Focus",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(28.dp),
                     )
                 }
             }

@@ -47,6 +47,7 @@ class FirebaseAuthRepository : AuthRepository {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user ?: return AuthResult.Error("Account creation failed. Please try again.")
             user.updateProfile(userProfileChangeRequest { this.displayName = displayName }).await()
+            user.reload().await()
             AuthResult.Success(user.toAuthUser())
         } catch (e: FirebaseAuthWeakPasswordException) {
             AuthResult.Error("Password is too weak. Use at least 6 characters.")
@@ -105,6 +106,18 @@ class FirebaseAuthRepository : AuthRepository {
                 }
                 projectDoc.reference.delete().await()
             }
+
+            // Delete kanban boards
+            val boardsSnapshot = db.collection("kanban_boards")
+                .whereEqualTo("ownerId", uid)
+                .get().await()
+            for (boardDoc in boardsSnapshot.documents) {
+                boardDoc.reference.delete().await()
+            }
+
+            // Delete pomodoro sessions
+            db.collection("users").document(uid).collection("pomodoro_sessions")
+                .get().await().documents.forEach { it.reference.delete().await() }
 
             // Delete chat history
             db.collection("users").document(uid).collection("chat_messages")

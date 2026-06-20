@@ -6,6 +6,7 @@ import com.theultimatenote.app.data.model.Notebook
 import com.theultimatenote.app.data.model.NotebookPage
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.NotebookRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,9 +42,12 @@ class NotebooksViewModel(
     private val _pages = MutableStateFlow<List<NotebookPage>>(emptyList())
     val pages: StateFlow<List<NotebookPage>> = _pages.asStateFlow()
 
+    private var pagesCollectionJob: Job? = null
+
     fun selectNotebook(notebook: Notebook) {
         _uiState.value = _uiState.value.copy(selectedNotebook = notebook, selectedPage = null, isEditing = false)
-        viewModelScope.launch {
+        pagesCollectionJob?.cancel()
+        pagesCollectionJob = viewModelScope.launch {
             notebookRepository.getNotebookPages(notebook.id).collect {
                 _pages.value = it
             }

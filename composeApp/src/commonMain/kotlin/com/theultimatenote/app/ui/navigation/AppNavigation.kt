@@ -104,20 +104,20 @@ private fun AuthNavigation(authViewModel: AuthViewModel) {
         composable<LoginRoute> {
             LoginScreen(
                 viewModel = authViewModel,
-                onNavigateToSignUp = { navController.navigate(SignUpRoute) },
-                onNavigateToForgotPassword = { navController.navigate(ForgotPasswordRoute) },
+                onNavigateToSignUp = { authViewModel.clearState(); navController.navigate(SignUpRoute) },
+                onNavigateToForgotPassword = { authViewModel.clearState(); navController.navigate(ForgotPasswordRoute) },
             )
         }
         composable<SignUpRoute> {
             SignUpScreen(
                 viewModel = authViewModel,
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { authViewModel.clearState(); navController.popBackStack() },
             )
         }
         composable<ForgotPasswordRoute> {
             ForgotPasswordScreen(
                 viewModel = authViewModel,
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { authViewModel.clearState(); navController.popBackStack() },
             )
         }
     }
@@ -137,7 +137,7 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    containerColor = MaterialTheme.colorScheme.inversePrimary,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                 ) {
                     bottomNavItems.forEach { item ->
@@ -201,7 +201,10 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
             composable<DailyRoute> { DailyScreen() }
             composable<NotebooksRoute> { NotebooksScreen() }
             composable<ProfileRoute> {
-                ProfileScreen(onNavigateBack = { navController.popBackStack() })
+                ProfileScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onSignOut = { authViewModel.signOut() },
+                )
             }
             composable<ChatRoute> {
                 ChatScreen(onNavigateBack = { navController.popBackStack() })

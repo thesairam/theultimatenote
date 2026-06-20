@@ -12,7 +12,20 @@
           "package_name": "com.theultimatenote.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "396389540538-5vimcu6m7n9pdmqerh3vnng2rg5rn3q6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.theultimatenote.app",
+            "certificate_hash": "44dd99002a123a410f0a874f3cb2a972722d3a55"
+          }
+        },
+        {
+          "client_id": "396389540538-o5ka1jk5gsvb6kb7tdtq0sl6sj7658g2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA6s43ITommRtC8iOm3e9dJ7McXVGwhgY0"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "396389540538-o5ka1jk5gsvb6kb7tdtq0sl6sj7658g2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

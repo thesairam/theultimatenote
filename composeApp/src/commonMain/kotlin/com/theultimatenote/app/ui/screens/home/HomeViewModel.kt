@@ -83,14 +83,16 @@ class HomeViewModel(
         learningTasks,
         regularProjectTasks,
     ) { user, daily, learning, projectTasks ->
-        val allTasks = daily + learning + projectTasks.map { it.task }
+        val todayRelevantTasks = daily.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == Clock.System.todayIn(TimeZone.currentSystemDefault()).toString() } +
+            learning.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == Clock.System.todayIn(TimeZone.currentSystemDefault()).toString() } +
+            projectTasks.map { it.task }.filter { !it.isCompletedToday || it.completedDate == Clock.System.todayIn(TimeZone.currentSystemDefault()).toString() }
         HomeUiState(
             userName = user?.displayName ?: "there",
             dailyTasks = daily.filter { !it.isCompletedToday },
             learningTasks = learning.filter { !it.isCompletedToday },
             projectTasks = projectTasks.filter { !it.task.isCompletedToday },
-            completedCount = allTasks.count { it.isCompletedToday },
-            totalCount = allTasks.size,
+            completedCount = todayRelevantTasks.count { it.isCompletedToday },
+            totalCount = todayRelevantTasks.size,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState())
 
@@ -101,7 +103,7 @@ class HomeViewModel(
     private fun resetRecurringTasksIfNeeded() {
         viewModelScope.launch {
             val projects = allProjects.first()
-            projects.filter { it.type == ProjectType.DAILY }.forEach { project ->
+            projects.filter { it.type == ProjectType.DAILY || it.type == ProjectType.LEARNING }.forEach { project ->
                 taskRepository.resetRecurringTasks(project.id)
             }
         }

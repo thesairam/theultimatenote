@@ -51,6 +51,22 @@ class FirebaseProjectRepository : ProjectRepository {
     }
 
     override suspend fun deleteProject(projectId: String) {
+        val tasksSnapshot = projectsCol.document(projectId).collection("tasks").get().await()
+        for (taskDoc in tasksSnapshot.documents) {
+            taskDoc.reference.delete().await()
+        }
+
+        val notebooksSnapshot = db.collection("notebooks")
+            .whereEqualTo("projectId", projectId)
+            .get().await()
+        for (notebookDoc in notebooksSnapshot.documents) {
+            val pagesSnapshot = notebookDoc.reference.collection("pages").get().await()
+            for (pageDoc in pagesSnapshot.documents) {
+                pageDoc.reference.delete().await()
+            }
+            notebookDoc.reference.delete().await()
+        }
+
         projectsCol.document(projectId).delete().await()
         boardsCol.document(projectId).delete().await()
     }

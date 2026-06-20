@@ -13,6 +13,7 @@ import com.theultimatenote.app.data.repository.TaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -60,6 +61,19 @@ class DailyViewModel(
             if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    init {
+        resetRecurringTasksIfNeeded()
+    }
+
+    private fun resetRecurringTasksIfNeeded() {
+        viewModelScope.launch {
+            val projects = allProjects.first()
+            projects.filter { it.type == ProjectType.DAILY || it.type == ProjectType.LEARNING }.forEach { project ->
+                taskRepository.resetRecurringTasks(project.id)
+            }
+        }
+    }
 
     fun addDailyTask(
         title: String,

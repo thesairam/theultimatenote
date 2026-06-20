@@ -51,7 +51,7 @@ fun PomodoroTimerSheet(
     taskTitle: String,
     durationMinutes: Int = 25,
     onComplete: (actualMinutes: Int) -> Unit,
-    onCancel: () -> Unit,
+    onCancel: (elapsedMinutes: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var state by remember { mutableStateOf(PomodoroState.IDLE) }
@@ -170,7 +170,7 @@ fun PomodoroTimerSheet(
                             FilledIconButton(
                                 onClick = {
                                     val elapsedMinutes = (totalSeconds - remainingSeconds) / 60
-                                    onCancel()
+                                    onCancel(elapsedMinutes)
                                 },
                                 modifier = Modifier.size(56.dp),
                                 colors = IconButtonDefaults.filledIconButtonColors(
@@ -191,7 +191,10 @@ fun PomodoroTimerSheet(
                                 Icon(Icons.Default.PlayArrow, contentDescription = "Resume", modifier = Modifier.size(28.dp))
                             }
                             FilledIconButton(
-                                onClick = { onCancel() },
+                                onClick = {
+                                    val elapsedMinutes = (totalSeconds - remainingSeconds) / 60
+                                    onCancel(elapsedMinutes)
+                                },
                                 modifier = Modifier.size(56.dp),
                                 colors = IconButtonDefaults.filledIconButtonColors(
                                     containerColor = MaterialTheme.colorScheme.error,

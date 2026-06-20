@@ -35,11 +35,16 @@ class FirebaseTaskRepository : TaskRepository {
     }
 
     override fun getTodayTasks(userId: String): Flow<List<Task>> {
-        return db.collectionGroup("tasks")
-            .whereEqualTo("isCompletedToday", false)
+        return db.collection("projects")
+            .whereEqualTo("ownerId", userId)
             .snapshots()
-            .map { snapshot ->
-                snapshot.documents.mapNotNull { it.toTask() }.sortedBy { it.order }
+            .map { projectsSnapshot ->
+                projectsSnapshot.documents.flatMap { projectDoc ->
+                    val tasksSnapshot = projectDoc.reference.collection("tasks")
+                        .whereEqualTo("isCompletedToday", false)
+                        .get().await()
+                    tasksSnapshot.documents.mapNotNull { it.toTask() }
+                }.sortedBy { it.order }
             }
     }
 

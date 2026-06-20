@@ -113,4 +113,8 @@ class AuthViewModel(
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
+
+    fun clearState() {
+        _uiState.value = AuthUiState()
+    }
 }

@@ -12,6 +12,7 @@ import com.theultimatenote.app.data.repository.TaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -44,7 +45,8 @@ class StatsViewModel(
     private val pomodoroRepository: PomodoroRepository,
 ) : ViewModel() {
 
-    private val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+    private val today: String
+        get() = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
 
     private val allProjects = authRepository.currentUser
         .flatMapLatest { user ->
@@ -64,13 +66,13 @@ class StatsViewModel(
         .flatMapLatest { user ->
             if (user != null) pomodoroRepository.getSessionsForDate(user.uid, today)
             else flowOf(emptyList())
-        }
+        }.catch { emit(emptyList()) }
 
     private val allSessions = authRepository.currentUser
         .flatMapLatest { user ->
             if (user != null) pomodoroRepository.getSessions(user.uid)
             else flowOf(emptyList())
-        }
+        }.catch { emit(emptyList()) }
 
     val uiState: StateFlow<StatsUiState> = combine(
         allTasksByProject,
@@ -85,9 +87,11 @@ class StatsViewModel(
         val completedSessions = todaySessions.filter { it.completed }
         val allCompletedSessions = allPomSessions.filter { it.completed }
 
+        val todayStr = today
+        val todayRelevant = allTasks.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == todayStr }
         StatsUiState(
-            totalTasksToday = allTasks.size,
-            completedToday = allTasks.count { it.isCompletedToday },
+            totalTasksToday = todayRelevant.size,
+            completedToday = todayRelevant.count { it.isCompletedToday },
             totalTasksAllTime = allTasks.size,
             pomodoroSessionsToday = completedSessions.size,
             pomodoroMinutesToday = completedSessions.sumOf { it.durationMinutes },
