@@ -137,7 +137,7 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.inversePrimary,
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                 ) {
                     bottomNavItems.forEach { item ->
