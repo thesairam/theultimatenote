@@ -1,7 +1,10 @@
 package com.theultimatenote.app.ui.screens.projects
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -54,9 +58,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import com.theultimatenote.app.data.model.KanbanColumn
 import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.ui.components.EisenhowerMatrixView
@@ -73,6 +85,12 @@ fun KanbanBoardScreen(
     val board by viewModel.board.collectAsState()
     val tasks by viewModel.tasks.collectAsState()
     var showMatrix by remember { mutableStateOf(false) }
+
+    var draggedTask by remember { mutableStateOf<Task?>(null) }
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var dragStartOffset by remember { mutableStateOf(Offset.Zero) }
+    val columnPositions = remember { mutableMapOf<String, Pair<Offset, IntSize>>() }
+    var hoveredColumnId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -93,7 +111,7 @@ fun KanbanBoardScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (showMatrix) "Kanban" else "Matrix",
+                            text = if (showMatrix) "Kanban" else "Eisenhower",
                             color = MaterialTheme.colorScheme.onPrimary,
                             style = MaterialTheme.typography.labelMedium,
                         )
@@ -133,24 +151,83 @@ fun KanbanBoardScreen(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             )
         } else {
-            LazyRow(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                items(columns, key = { it.id }) { column ->
-                    val columnTasks = tasks.filter { it.columnId == column.id }
-                    KanbanColumnCard(
-                        column = column,
-                        tasks = columnTasks,
-                        allColumns = columns,
-                        isDailyProject = isDailyProject,
-                        onAddTask = { title, urgent, important -> viewModel.addTask(title, column.id, urgent, important) },
-                        onMoveTask = { taskId, newColId -> viewModel.moveTask(taskId, newColId) },
-                        onToggleComplete = { task -> viewModel.toggleTaskComplete(task) },
-                        onDeleteTask = { taskId -> viewModel.deleteTask(taskId) },
-                        onEditTask = { task -> viewModel.updateTask(task) },
-                    )
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                LazyRow(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    items(columns, key = { it.id }) { column ->
+                        val columnTasks = tasks.filter { it.columnId == column.id }
+                        val isHovered = hoveredColumnId == column.id && draggedTask != null && draggedTask?.columnId != column.id
+                        KanbanColumnCard(
+                            column = column,
+                            tasks = columnTasks,
+                            allColumns = columns,
+                            isDailyProject = isDailyProject,
+                            isDropTarget = isHovered,
+                            onAddTask = { title, urgent, important -> viewModel.addTask(title, column.id, urgent, important) },
+                            onMoveTask = { taskId, newColId -> viewModel.moveTask(taskId, newColId) },
+                            onToggleComplete = { task -> viewModel.toggleTaskComplete(task) },
+                            onDeleteTask = { taskId -> viewModel.deleteTask(taskId) },
+                            onEditTask = { task -> viewModel.updateTask(task) },
+                            onRegisterPosition = { pos, size -> columnPositions[column.id] = pos to size },
+                            onStartDrag = { task, offset ->
+                                draggedTask = task
+                                dragStartOffset = offset
+                                dragOffset = Offset.Zero
+                            },
+                            onDrag = { change ->
+                                dragOffset += change
+                                val fingerPos = dragStartOffset + dragOffset
+                                hoveredColumnId = columnPositions.entries.find { (_, posSize) ->
+                                    val (pos, size) = posSize
+                                    fingerPos.x in pos.x..(pos.x + size.width) &&
+                                        fingerPos.y in pos.y..(pos.y + size.height)
+                                }?.key
+                            },
+                            onDrop = {
+                                val target = hoveredColumnId
+                                if (target != null && draggedTask != null && target != draggedTask?.columnId) {
+                                    viewModel.moveTask(draggedTask!!.id, target)
+                                }
+                                draggedTask = null
+                                dragOffset = Offset.Zero
+                                hoveredColumnId = null
+                            },
+                            draggedTaskId = draggedTask?.id,
+                        )
+                    }
+                }
+
+                if (draggedTask != null) {
+                    Card(
+                        modifier = Modifier
+                            .width(260.dp)
+                            .offset {
+                                IntOffset(
+                                    (dragStartOffset.x + dragOffset.x - 130f).roundToInt(),
+                                    (dragStartOffset.y + dragOffset.y - 30f).roundToInt(),
+                                )
+                            }
+                            .graphicsLayer {
+                                alpha = 0.85f
+                                shadowElevation = 12f
+                                rotationZ = 2f
+                            },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                    ) {
+                        Text(
+                            text = draggedTask!!.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(12.dp),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }
@@ -163,24 +240,39 @@ private fun KanbanColumnCard(
     tasks: List<Task>,
     allColumns: List<KanbanColumn>,
     isDailyProject: Boolean,
+    isDropTarget: Boolean = false,
     onAddTask: (String, Boolean, Boolean) -> Unit,
     onMoveTask: (String, String) -> Unit,
     onToggleComplete: (Task) -> Unit,
     onDeleteTask: (String) -> Unit,
     onEditTask: (Task) -> Unit,
+    onRegisterPosition: (Offset, IntSize) -> Unit = { _, _ -> },
+    onStartDrag: (Task, Offset) -> Unit = { _, _ -> },
+    onDrag: (Offset) -> Unit = {},
+    onDrop: () -> Unit = {},
+    draggedTaskId: String? = null,
 ) {
     var showAddTask by remember { mutableStateOf(false) }
     var newTaskTitle by remember { mutableStateOf("") }
     var newTaskUrgent by remember { mutableStateOf(false) }
     var newTaskImportant by remember { mutableStateOf(false) }
 
+    val borderColor = if (isDropTarget) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val borderWidth = if (isDropTarget) 2.dp else 0.75.dp
+    val bgAlpha = if (isDropTarget) 0.6f else 0.4f
+
     Card(
-        modifier = Modifier.width(280.dp).fillMaxHeight(),
+        modifier = Modifier
+            .width(280.dp)
+            .fillMaxHeight()
+            .onGloballyPositioned { coords ->
+                onRegisterPosition(coords.positionInRoot(), coords.size)
+            },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = bgAlpha),
         ),
         shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outline),
+        border = BorderStroke(borderWidth, borderColor),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -283,15 +375,38 @@ private fun KanbanColumnCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(tasks, key = { it.id }) { task ->
-                    TaskCard(
-                        task = task,
-                        allColumns = allColumns,
-                        isDailyProject = isDailyProject,
-                        onMove = { newColId -> onMoveTask(task.id, newColId) },
-                        onToggleComplete = { onToggleComplete(task) },
-                        onDelete = { onDeleteTask(task.id) },
-                        onEdit = onEditTask,
-                    )
+                    val isDragged = draggedTaskId == task.id
+                    var taskRootPos by remember { mutableStateOf(Offset.Zero) }
+                    Box(
+                        modifier = Modifier
+                            .graphicsLayer { alpha = if (isDragged) 0.3f else 1f }
+                            .onGloballyPositioned { coords ->
+                                taskRootPos = coords.positionInRoot()
+                            }
+                            .pointerInput(task.id) {
+                                detectDragGesturesAfterLongPress(
+                                    onDragStart = { offset ->
+                                        onStartDrag(task, taskRootPos + offset)
+                                    },
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        onDrag(dragAmount)
+                                    },
+                                    onDragEnd = { onDrop() },
+                                    onDragCancel = { onDrop() },
+                                )
+                            },
+                    ) {
+                        TaskCard(
+                            task = task,
+                            allColumns = allColumns,
+                            isDailyProject = isDailyProject,
+                            onMove = { newColId -> onMoveTask(task.id, newColId) },
+                            onToggleComplete = { onToggleComplete(task) },
+                            onDelete = { onDeleteTask(task.id) },
+                            onEdit = onEditTask,
+                        )
+                    }
                 }
             }
         }

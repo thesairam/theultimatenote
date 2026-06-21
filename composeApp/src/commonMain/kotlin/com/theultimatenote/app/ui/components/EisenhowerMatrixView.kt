@@ -2,6 +2,7 @@ package com.theultimatenote.app.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,11 +37,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import com.theultimatenote.app.data.model.KanbanColumn
 import com.theultimatenote.app.data.model.Task
 
@@ -62,81 +72,240 @@ fun EisenhowerMatrixView(
 ) {
     val nonCompleted = tasks.filter { !it.isCompletedToday }
 
-    Column(modifier = modifier.padding(8.dp)) {
-        // Top row: Important
-        Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            QuadrantCard(
-                quadrant = Quadrant.DO_FIRST,
-                tasks = nonCompleted.filter { it.isUrgent && it.isImportant },
-                columns = columns,
-                allTasks = nonCompleted,
-                onToggleComplete = onToggleComplete,
-                onMoveQuadrant = onMoveQuadrant,
-                onEditTask = onEditTask,
-                isDailyProject = isDailyProject,
-                modifier = Modifier.weight(1f),
-                accentColor = MaterialTheme.colorScheme.error,
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            QuadrantCard(
-                quadrant = Quadrant.SCHEDULE,
-                tasks = nonCompleted.filter { !it.isUrgent && it.isImportant },
-                columns = columns,
-                allTasks = nonCompleted,
-                onToggleComplete = onToggleComplete,
-                onMoveQuadrant = onMoveQuadrant,
-                onEditTask = onEditTask,
-                isDailyProject = isDailyProject,
-                modifier = Modifier.weight(1f),
-                accentColor = MaterialTheme.colorScheme.tertiary,
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        // Bottom row: Not Important
-        Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            QuadrantCard(
-                quadrant = Quadrant.QUICK_WIN,
-                tasks = nonCompleted.filter { it.isUrgent && !it.isImportant },
-                columns = columns,
-                allTasks = nonCompleted,
-                onToggleComplete = onToggleComplete,
-                onMoveQuadrant = onMoveQuadrant,
-                onEditTask = onEditTask,
-                isDailyProject = isDailyProject,
-                modifier = Modifier.weight(1f),
-                accentColor = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            QuadrantCard(
-                quadrant = Quadrant.LOW_PRIORITY,
-                tasks = nonCompleted.filter { !it.isUrgent && !it.isImportant },
-                columns = columns,
-                allTasks = nonCompleted,
-                onToggleComplete = onToggleComplete,
-                onMoveQuadrant = onMoveQuadrant,
-                onEditTask = onEditTask,
-                isDailyProject = isDailyProject,
-                modifier = Modifier.weight(1f),
-                accentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    var draggedTask by remember { mutableStateOf<Task?>(null) }
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var dragStartOffset by remember { mutableStateOf(Offset.Zero) }
+    val quadrantPositions = remember { mutableMapOf<Quadrant, Pair<Offset, IntSize>>() }
+    var hoveredQuadrant by remember { mutableStateOf<Quadrant?>(null) }
+
+    Box(modifier = modifier) {
+        Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                QuadrantCard(
+                    quadrant = Quadrant.DO_FIRST,
+                    tasks = nonCompleted.filter { it.isUrgent && it.isImportant },
+                    columns = columns,
+                    allTasks = nonCompleted,
+                    onToggleComplete = onToggleComplete,
+                    onMoveQuadrant = onMoveQuadrant,
+                    onEditTask = onEditTask,
+                    isDailyProject = isDailyProject,
+                    modifier = Modifier.weight(1f),
+                    accentColor = MaterialTheme.colorScheme.error,
+                    isDropTarget = hoveredQuadrant == Quadrant.DO_FIRST && draggedTask != null,
+                    onRegisterPosition = { pos, size -> quadrantPositions[Quadrant.DO_FIRST] = pos to size },
+                    onStartDrag = { task, offset ->
+                        draggedTask = task
+                        dragStartOffset = offset
+                        dragOffset = Offset.Zero
+                    },
+                    onDrag = { change ->
+                        dragOffset += change
+                        val fingerPos = dragStartOffset + dragOffset
+                        hoveredQuadrant = quadrantPositions.entries.find { (_, posSize) ->
+                            val (pos, size) = posSize
+                            fingerPos.x in pos.x..(pos.x + size.width) &&
+                                fingerPos.y in pos.y..(pos.y + size.height)
+                        }?.key
+                    },
+                    onDrop = {
+                        val target = hoveredQuadrant
+                        if (target != null && draggedTask != null) {
+                            val sourceQuadrant = Quadrant.entries.find {
+                                it.isUrgent == draggedTask!!.isUrgent && it.isImportant == draggedTask!!.isImportant
+                            }
+                            if (target != sourceQuadrant) {
+                                onMoveQuadrant(draggedTask!!, target.isUrgent, target.isImportant)
+                            }
+                        }
+                        draggedTask = null
+                        dragOffset = Offset.Zero
+                        hoveredQuadrant = null
+                    },
+                    draggedTaskId = draggedTask?.id,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                QuadrantCard(
+                    quadrant = Quadrant.SCHEDULE,
+                    tasks = nonCompleted.filter { !it.isUrgent && it.isImportant },
+                    columns = columns,
+                    allTasks = nonCompleted,
+                    onToggleComplete = onToggleComplete,
+                    onMoveQuadrant = onMoveQuadrant,
+                    onEditTask = onEditTask,
+                    isDailyProject = isDailyProject,
+                    modifier = Modifier.weight(1f),
+                    accentColor = MaterialTheme.colorScheme.tertiary,
+                    isDropTarget = hoveredQuadrant == Quadrant.SCHEDULE && draggedTask != null,
+                    onRegisterPosition = { pos, size -> quadrantPositions[Quadrant.SCHEDULE] = pos to size },
+                    onStartDrag = { task, offset ->
+                        draggedTask = task
+                        dragStartOffset = offset
+                        dragOffset = Offset.Zero
+                    },
+                    onDrag = { change ->
+                        dragOffset += change
+                        val fingerPos = dragStartOffset + dragOffset
+                        hoveredQuadrant = quadrantPositions.entries.find { (_, posSize) ->
+                            val (pos, size) = posSize
+                            fingerPos.x in pos.x..(pos.x + size.width) &&
+                                fingerPos.y in pos.y..(pos.y + size.height)
+                        }?.key
+                    },
+                    onDrop = {
+                        val target = hoveredQuadrant
+                        if (target != null && draggedTask != null) {
+                            val sourceQuadrant = Quadrant.entries.find {
+                                it.isUrgent == draggedTask!!.isUrgent && it.isImportant == draggedTask!!.isImportant
+                            }
+                            if (target != sourceQuadrant) {
+                                onMoveQuadrant(draggedTask!!, target.isUrgent, target.isImportant)
+                            }
+                        }
+                        draggedTask = null
+                        dragOffset = Offset.Zero
+                        hoveredQuadrant = null
+                    },
+                    draggedTaskId = draggedTask?.id,
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                QuadrantCard(
+                    quadrant = Quadrant.QUICK_WIN,
+                    tasks = nonCompleted.filter { it.isUrgent && !it.isImportant },
+                    columns = columns,
+                    allTasks = nonCompleted,
+                    onToggleComplete = onToggleComplete,
+                    onMoveQuadrant = onMoveQuadrant,
+                    onEditTask = onEditTask,
+                    isDailyProject = isDailyProject,
+                    modifier = Modifier.weight(1f),
+                    accentColor = MaterialTheme.colorScheme.primary,
+                    isDropTarget = hoveredQuadrant == Quadrant.QUICK_WIN && draggedTask != null,
+                    onRegisterPosition = { pos, size -> quadrantPositions[Quadrant.QUICK_WIN] = pos to size },
+                    onStartDrag = { task, offset ->
+                        draggedTask = task
+                        dragStartOffset = offset
+                        dragOffset = Offset.Zero
+                    },
+                    onDrag = { change ->
+                        dragOffset += change
+                        val fingerPos = dragStartOffset + dragOffset
+                        hoveredQuadrant = quadrantPositions.entries.find { (_, posSize) ->
+                            val (pos, size) = posSize
+                            fingerPos.x in pos.x..(pos.x + size.width) &&
+                                fingerPos.y in pos.y..(pos.y + size.height)
+                        }?.key
+                    },
+                    onDrop = {
+                        val target = hoveredQuadrant
+                        if (target != null && draggedTask != null) {
+                            val sourceQuadrant = Quadrant.entries.find {
+                                it.isUrgent == draggedTask!!.isUrgent && it.isImportant == draggedTask!!.isImportant
+                            }
+                            if (target != sourceQuadrant) {
+                                onMoveQuadrant(draggedTask!!, target.isUrgent, target.isImportant)
+                            }
+                        }
+                        draggedTask = null
+                        dragOffset = Offset.Zero
+                        hoveredQuadrant = null
+                    },
+                    draggedTaskId = draggedTask?.id,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                QuadrantCard(
+                    quadrant = Quadrant.LOW_PRIORITY,
+                    tasks = nonCompleted.filter { !it.isUrgent && !it.isImportant },
+                    columns = columns,
+                    allTasks = nonCompleted,
+                    onToggleComplete = onToggleComplete,
+                    onMoveQuadrant = onMoveQuadrant,
+                    onEditTask = onEditTask,
+                    isDailyProject = isDailyProject,
+                    modifier = Modifier.weight(1f),
+                    accentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    isDropTarget = hoveredQuadrant == Quadrant.LOW_PRIORITY && draggedTask != null,
+                    onRegisterPosition = { pos, size -> quadrantPositions[Quadrant.LOW_PRIORITY] = pos to size },
+                    onStartDrag = { task, offset ->
+                        draggedTask = task
+                        dragStartOffset = offset
+                        dragOffset = Offset.Zero
+                    },
+                    onDrag = { change ->
+                        dragOffset += change
+                        val fingerPos = dragStartOffset + dragOffset
+                        hoveredQuadrant = quadrantPositions.entries.find { (_, posSize) ->
+                            val (pos, size) = posSize
+                            fingerPos.x in pos.x..(pos.x + size.width) &&
+                                fingerPos.y in pos.y..(pos.y + size.height)
+                        }?.key
+                    },
+                    onDrop = {
+                        val target = hoveredQuadrant
+                        if (target != null && draggedTask != null) {
+                            val sourceQuadrant = Quadrant.entries.find {
+                                it.isUrgent == draggedTask!!.isUrgent && it.isImportant == draggedTask!!.isImportant
+                            }
+                            if (target != sourceQuadrant) {
+                                onMoveQuadrant(draggedTask!!, target.isUrgent, target.isImportant)
+                            }
+                        }
+                        draggedTask = null
+                        dragOffset = Offset.Zero
+                        hoveredQuadrant = null
+                    },
+                    draggedTaskId = draggedTask?.id,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = "← Urgent",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                )
+                Text(
+                    text = "Not Urgent →",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                )
+            }
         }
 
-        // Axis labels
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = "← Urgent",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-            )
-            Text(
-                text = "Not Urgent →",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            )
+        if (draggedTask != null) {
+            Card(
+                modifier = Modifier
+                    .width(160.dp)
+                    .offset {
+                        IntOffset(
+                            (dragStartOffset.x + dragOffset.x - 80f).roundToInt(),
+                            (dragStartOffset.y + dragOffset.y - 20f).roundToInt(),
+                        )
+                    }
+                    .graphicsLayer {
+                        alpha = 0.85f
+                        shadowElevation = 12f
+                        rotationZ = 2f
+                    },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+            ) {
+                Text(
+                    text = draggedTask!!.title,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(10.dp),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
@@ -153,14 +322,28 @@ private fun QuadrantCard(
     isDailyProject: Boolean,
     modifier: Modifier = Modifier,
     accentColor: Color,
+    isDropTarget: Boolean = false,
+    onRegisterPosition: (Offset, IntSize) -> Unit = { _, _ -> },
+    onStartDrag: (Task, Offset) -> Unit = { _, _ -> },
+    onDrag: (Offset) -> Unit = {},
+    onDrop: () -> Unit = {},
+    draggedTaskId: String? = null,
 ) {
+    val borderColor = if (isDropTarget) accentColor else accentColor.copy(alpha = 0.3f)
+    val borderWidth = if (isDropTarget) 2.dp else 0.75.dp
+    val bgAlpha = if (isDropTarget) 0.15f else 0.06f
+
     Card(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .onGloballyPositioned { coords ->
+                onRegisterPosition(coords.positionInRoot(), coords.size)
+            },
         colors = CardDefaults.cardColors(
-            containerColor = accentColor.copy(alpha = 0.06f),
+            containerColor = accentColor.copy(alpha = bgAlpha),
         ),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(0.75.dp, accentColor.copy(alpha = 0.3f)),
+        border = BorderStroke(borderWidth, borderColor),
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
             Row(
@@ -188,15 +371,38 @@ private fun QuadrantCard(
                     else tasks.sortedBy { it.createdAt },
                     key = { "matrix-${it.id}" },
                 ) { task ->
-                    MatrixTaskCard(
-                        task = task,
-                        columns = columns,
-                        quadrant = quadrant,
-                        onToggleComplete = { onToggleComplete(task) },
-                        onMoveQuadrant = onMoveQuadrant,
-                        onEditTask = onEditTask,
-                        isDailyProject = isDailyProject,
-                    )
+                    val isDragged = draggedTaskId == task.id
+                    var taskRootPos by remember { mutableStateOf(Offset.Zero) }
+                    Box(
+                        modifier = Modifier
+                            .graphicsLayer { alpha = if (isDragged) 0.3f else 1f }
+                            .onGloballyPositioned { coords ->
+                                taskRootPos = coords.positionInRoot()
+                            }
+                            .pointerInput(task.id) {
+                                detectDragGesturesAfterLongPress(
+                                    onDragStart = { offset ->
+                                        onStartDrag(task, taskRootPos + offset)
+                                    },
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        onDrag(dragAmount)
+                                    },
+                                    onDragEnd = { onDrop() },
+                                    onDragCancel = { onDrop() },
+                                )
+                            },
+                    ) {
+                        MatrixTaskCard(
+                            task = task,
+                            columns = columns,
+                            quadrant = quadrant,
+                            onToggleComplete = { onToggleComplete(task) },
+                            onMoveQuadrant = onMoveQuadrant,
+                            onEditTask = onEditTask,
+                            isDailyProject = isDailyProject,
+                        )
+                    }
                 }
             }
         }
