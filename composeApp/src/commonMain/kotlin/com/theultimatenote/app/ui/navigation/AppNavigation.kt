@@ -1,5 +1,10 @@
 package com.theultimatenote.app.ui.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -100,6 +105,10 @@ private fun AuthNavigation(authViewModel: AuthViewModel) {
     NavHost(
         navController = navController,
         startDestination = LoginRoute,
+        enterTransition = { slideInHorizontally(tween(250)) { it / 3 } + fadeIn(tween(200)) },
+        exitTransition = { fadeOut(tween(150)) },
+        popEnterTransition = { slideInHorizontally(tween(250)) { -it / 3 } + fadeIn(tween(200)) },
+        popExitTransition = { slideOutHorizontally(tween(250)) { it / 3 } + fadeOut(tween(150)) },
     ) {
         composable<LoginRoute> {
             LoginScreen(
@@ -169,6 +178,10 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
             navController = navController,
             startDestination = HomeRoute,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = { fadeIn(animationSpec = tween(200)) },
+            exitTransition = { fadeOut(animationSpec = tween(150)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(200)) },
+            popExitTransition = { fadeOut(animationSpec = tween(150)) },
         ) {
             composable<HomeRoute> {
                 HomeScreen(
@@ -185,7 +198,10 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
                     },
                 )
             }
-            composable<KanbanBoardRoute> { backStackEntry ->
+            composable<KanbanBoardRoute>(
+                enterTransition = { slideInHorizontally(tween(250)) { it / 3 } + fadeIn(tween(200)) },
+                popExitTransition = { slideOutHorizontally(tween(250)) { it / 3 } + fadeOut(tween(150)) },
+            ) { backStackEntry ->
                 val route = backStackEntry.toRoute<KanbanBoardRoute>()
                 val koin = getKoin()
                 val kanbanViewModel: KanbanViewModel = remember(route.projectId) {
@@ -200,16 +216,25 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
             }
             composable<DailyRoute> { DailyScreen() }
             composable<NotebooksRoute> { NotebooksScreen() }
-            composable<ProfileRoute> {
+            composable<ProfileRoute>(
+                enterTransition = { slideInHorizontally(tween(250)) { it / 3 } + fadeIn(tween(200)) },
+                popExitTransition = { slideOutHorizontally(tween(250)) { it / 3 } + fadeOut(tween(150)) },
+            ) {
                 ProfileScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onSignOut = { authViewModel.signOut() },
                 )
             }
-            composable<ChatRoute> {
+            composable<ChatRoute>(
+                enterTransition = { slideInHorizontally(tween(250)) { it / 3 } + fadeIn(tween(200)) },
+                popExitTransition = { slideOutHorizontally(tween(250)) { it / 3 } + fadeOut(tween(150)) },
+            ) {
                 ChatScreen(onNavigateBack = { navController.popBackStack() })
             }
-            composable<StatsRoute> {
+            composable<StatsRoute>(
+                enterTransition = { slideInHorizontally(tween(250)) { it / 3 } + fadeIn(tween(200)) },
+                popExitTransition = { slideOutHorizontally(tween(250)) { it / 3 } + fadeOut(tween(150)) },
+            ) {
                 StatsScreen(onNavigateBack = { navController.popBackStack() })
             }
         }

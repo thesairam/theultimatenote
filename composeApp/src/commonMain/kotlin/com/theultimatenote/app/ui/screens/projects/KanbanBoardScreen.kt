@@ -151,7 +151,15 @@ fun KanbanBoardScreen(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             )
         } else {
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            var containerRootPos by remember { mutableStateOf(Offset.Zero) }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .onGloballyPositioned { coords ->
+                        containerRootPos = coords.positionInRoot()
+                    },
+            ) {
                 LazyRow(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
@@ -201,23 +209,26 @@ fun KanbanBoardScreen(
                 }
 
                 if (draggedTask != null) {
+                    val pos = dragStartOffset + dragOffset - containerRootPos
                     Card(
                         modifier = Modifier
-                            .width(260.dp)
+                            .width(240.dp)
                             .offset {
                                 IntOffset(
-                                    (dragStartOffset.x + dragOffset.x - 130f).roundToInt(),
-                                    (dragStartOffset.y + dragOffset.y - 30f).roundToInt(),
+                                    (pos.x - 120f).roundToInt(),
+                                    (pos.y - 24f).roundToInt(),
                                 )
                             }
                             .graphicsLayer {
-                                alpha = 0.85f
-                                shadowElevation = 12f
-                                rotationZ = 2f
+                                alpha = 0.92f
+                                scaleX = 1.04f
+                                scaleY = 1.04f
+                                shadowElevation = 16f
+                                rotationZ = 1.5f
                             },
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
                     ) {
                         Text(
                             text = draggedTask!!.title,

@@ -95,7 +95,7 @@ fun DailyScreen() {
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (showMatrix) "List" else "Matrix",
+                            text = if (showMatrix) "List" else "Eisenhower",
                             color = MaterialTheme.colorScheme.onPrimary,
                             style = MaterialTheme.typography.labelMedium,
                         )

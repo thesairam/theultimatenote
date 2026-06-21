@@ -78,7 +78,48 @@ fun EisenhowerMatrixView(
     val quadrantPositions = remember { mutableMapOf<Quadrant, Pair<Offset, IntSize>>() }
     var hoveredQuadrant by remember { mutableStateOf<Quadrant?>(null) }
 
-    Box(modifier = modifier) {
+    val handleStartDrag: (Task, Offset) -> Unit = { task, offset ->
+        draggedTask = task
+        dragStartOffset = offset
+        dragOffset = Offset.Zero
+    }
+    val handleDrag: (Offset) -> Unit = { change ->
+        dragOffset += change
+        val fingerPos = dragStartOffset + dragOffset
+        hoveredQuadrant = quadrantPositions.entries.find { (_, posSize) ->
+            val (pos, size) = posSize
+            fingerPos.x in pos.x..(pos.x + size.width) &&
+                fingerPos.y in pos.y..(pos.y + size.height)
+        }?.key
+    }
+    val handleDrop: () -> Unit = {
+        val target = hoveredQuadrant
+        if (target != null && draggedTask != null) {
+            val sourceQuadrant = Quadrant.entries.find {
+                it.isUrgent == draggedTask!!.isUrgent && it.isImportant == draggedTask!!.isImportant
+            }
+            if (target != sourceQuadrant) {
+                onMoveQuadrant(draggedTask!!, target.isUrgent, target.isImportant)
+            }
+        }
+        draggedTask = null
+        dragOffset = Offset.Zero
+        hoveredQuadrant = null
+    }
+
+    val quadrantColors = mapOf(
+        Quadrant.DO_FIRST to MaterialTheme.colorScheme.error,
+        Quadrant.SCHEDULE to MaterialTheme.colorScheme.tertiary,
+        Quadrant.QUICK_WIN to MaterialTheme.colorScheme.primary,
+        Quadrant.LOW_PRIORITY to MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    var containerRootPos by remember { mutableStateOf(Offset.Zero) }
+    Box(
+        modifier = modifier.onGloballyPositioned { coords ->
+            containerRootPos = coords.positionInRoot()
+        },
+    ) {
         Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 QuadrantCard(
@@ -91,37 +132,12 @@ fun EisenhowerMatrixView(
                     onEditTask = onEditTask,
                     isDailyProject = isDailyProject,
                     modifier = Modifier.weight(1f),
-                    accentColor = MaterialTheme.colorScheme.error,
+                    accentColor = quadrantColors[Quadrant.DO_FIRST]!!,
                     isDropTarget = hoveredQuadrant == Quadrant.DO_FIRST && draggedTask != null,
                     onRegisterPosition = { pos, size -> quadrantPositions[Quadrant.DO_FIRST] = pos to size },
-                    onStartDrag = { task, offset ->
-                        draggedTask = task
-                        dragStartOffset = offset
-                        dragOffset = Offset.Zero
-                    },
-                    onDrag = { change ->
-                        dragOffset += change
-                        val fingerPos = dragStartOffset + dragOffset
-                        hoveredQuadrant = quadrantPositions.entries.find { (_, posSize) ->
-                            val (pos, size) = posSize
-                            fingerPos.x in pos.x..(pos.x + size.width) &&
-                                fingerPos.y in pos.y..(pos.y + size.height)
-                        }?.key
-                    },
-                    onDrop = {
-                        val target = hoveredQuadrant
-                        if (target != null && draggedTask != null) {
-                            val sourceQuadrant = Quadrant.entries.find {
-                                it.isUrgent == draggedTask!!.isUrgent && it.isImportant == draggedTask!!.isImportant
-                            }
-                            if (target != sourceQuadrant) {
-                                onMoveQuadrant(draggedTask!!, target.isUrgent, target.isImportant)
-                            }
-                        }
-                        draggedTask = null
-                        dragOffset = Offset.Zero
-                        hoveredQuadrant = null
-                    },
+                    onStartDrag = handleStartDrag,
+                    onDrag = handleDrag,
+                    onDrop = handleDrop,
                     draggedTaskId = draggedTask?.id,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -135,37 +151,12 @@ fun EisenhowerMatrixView(
                     onEditTask = onEditTask,
                     isDailyProject = isDailyProject,
                     modifier = Modifier.weight(1f),
-                    accentColor = MaterialTheme.colorScheme.tertiary,
+                    accentColor = quadrantColors[Quadrant.SCHEDULE]!!,
                     isDropTarget = hoveredQuadrant == Quadrant.SCHEDULE && draggedTask != null,
                     onRegisterPosition = { pos, size -> quadrantPositions[Quadrant.SCHEDULE] = pos to size },
-                    onStartDrag = { task, offset ->
-                        draggedTask = task
-                        dragStartOffset = offset
-                        dragOffset = Offset.Zero
-                    },
-                    onDrag = { change ->
-                        dragOffset += change
-                        val fingerPos = dragStartOffset + dragOffset
-                        hoveredQuadrant = quadrantPositions.entries.find { (_, posSize) ->
-                            val (pos, size) = posSize
-                            fingerPos.x in pos.x..(pos.x + size.width) &&
-                                fingerPos.y in pos.y..(pos.y + size.height)
-                        }?.key
-                    },
-                    onDrop = {
-                        val target = hoveredQuadrant
-                        if (target != null && draggedTask != null) {
-                            val sourceQuadrant = Quadrant.entries.find {
-                                it.isUrgent == draggedTask!!.isUrgent && it.isImportant == draggedTask!!.isImportant
-                            }
-                            if (target != sourceQuadrant) {
-                                onMoveQuadrant(draggedTask!!, target.isUrgent, target.isImportant)
-                            }
-                        }
-                        draggedTask = null
-                        dragOffset = Offset.Zero
-                        hoveredQuadrant = null
-                    },
+                    onStartDrag = handleStartDrag,
+                    onDrag = handleDrag,
+                    onDrop = handleDrop,
                     draggedTaskId = draggedTask?.id,
                 )
             }
@@ -181,37 +172,12 @@ fun EisenhowerMatrixView(
                     onEditTask = onEditTask,
                     isDailyProject = isDailyProject,
                     modifier = Modifier.weight(1f),
-                    accentColor = MaterialTheme.colorScheme.primary,
+                    accentColor = quadrantColors[Quadrant.QUICK_WIN]!!,
                     isDropTarget = hoveredQuadrant == Quadrant.QUICK_WIN && draggedTask != null,
                     onRegisterPosition = { pos, size -> quadrantPositions[Quadrant.QUICK_WIN] = pos to size },
-                    onStartDrag = { task, offset ->
-                        draggedTask = task
-                        dragStartOffset = offset
-                        dragOffset = Offset.Zero
-                    },
-                    onDrag = { change ->
-                        dragOffset += change
-                        val fingerPos = dragStartOffset + dragOffset
-                        hoveredQuadrant = quadrantPositions.entries.find { (_, posSize) ->
-                            val (pos, size) = posSize
-                            fingerPos.x in pos.x..(pos.x + size.width) &&
-                                fingerPos.y in pos.y..(pos.y + size.height)
-                        }?.key
-                    },
-                    onDrop = {
-                        val target = hoveredQuadrant
-                        if (target != null && draggedTask != null) {
-                            val sourceQuadrant = Quadrant.entries.find {
-                                it.isUrgent == draggedTask!!.isUrgent && it.isImportant == draggedTask!!.isImportant
-                            }
-                            if (target != sourceQuadrant) {
-                                onMoveQuadrant(draggedTask!!, target.isUrgent, target.isImportant)
-                            }
-                        }
-                        draggedTask = null
-                        dragOffset = Offset.Zero
-                        hoveredQuadrant = null
-                    },
+                    onStartDrag = handleStartDrag,
+                    onDrag = handleDrag,
+                    onDrop = handleDrop,
                     draggedTaskId = draggedTask?.id,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -225,37 +191,12 @@ fun EisenhowerMatrixView(
                     onEditTask = onEditTask,
                     isDailyProject = isDailyProject,
                     modifier = Modifier.weight(1f),
-                    accentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    accentColor = quadrantColors[Quadrant.LOW_PRIORITY]!!,
                     isDropTarget = hoveredQuadrant == Quadrant.LOW_PRIORITY && draggedTask != null,
                     onRegisterPosition = { pos, size -> quadrantPositions[Quadrant.LOW_PRIORITY] = pos to size },
-                    onStartDrag = { task, offset ->
-                        draggedTask = task
-                        dragStartOffset = offset
-                        dragOffset = Offset.Zero
-                    },
-                    onDrag = { change ->
-                        dragOffset += change
-                        val fingerPos = dragStartOffset + dragOffset
-                        hoveredQuadrant = quadrantPositions.entries.find { (_, posSize) ->
-                            val (pos, size) = posSize
-                            fingerPos.x in pos.x..(pos.x + size.width) &&
-                                fingerPos.y in pos.y..(pos.y + size.height)
-                        }?.key
-                    },
-                    onDrop = {
-                        val target = hoveredQuadrant
-                        if (target != null && draggedTask != null) {
-                            val sourceQuadrant = Quadrant.entries.find {
-                                it.isUrgent == draggedTask!!.isUrgent && it.isImportant == draggedTask!!.isImportant
-                            }
-                            if (target != sourceQuadrant) {
-                                onMoveQuadrant(draggedTask!!, target.isUrgent, target.isImportant)
-                            }
-                        }
-                        draggedTask = null
-                        dragOffset = Offset.Zero
-                        hoveredQuadrant = null
-                    },
+                    onStartDrag = handleStartDrag,
+                    onDrag = handleDrag,
+                    onDrop = handleDrop,
                     draggedTaskId = draggedTask?.id,
                 )
             }
@@ -279,23 +220,26 @@ fun EisenhowerMatrixView(
         }
 
         if (draggedTask != null) {
+            val pos = dragStartOffset + dragOffset - containerRootPos
             Card(
                 modifier = Modifier
-                    .width(160.dp)
+                    .width(150.dp)
                     .offset {
                         IntOffset(
-                            (dragStartOffset.x + dragOffset.x - 80f).roundToInt(),
-                            (dragStartOffset.y + dragOffset.y - 20f).roundToInt(),
+                            (pos.x - 75f).roundToInt(),
+                            (pos.y - 20f).roundToInt(),
                         )
                     }
                     .graphicsLayer {
-                        alpha = 0.85f
-                        shadowElevation = 12f
-                        rotationZ = 2f
+                        alpha = 0.92f
+                        scaleX = 1.05f
+                        scaleY = 1.05f
+                        shadowElevation = 16f
+                        rotationZ = 1.5f
                     },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
             ) {
                 Text(
                     text = draggedTask!!.title,
