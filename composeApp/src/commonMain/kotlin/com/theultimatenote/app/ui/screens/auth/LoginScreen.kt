@@ -7,6 +7,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -51,6 +52,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.ui.components.AppleSignInButton
 import com.theultimatenote.app.ui.components.GoogleSignInButton
+import org.jetbrains.compose.resources.painterResource
+import theultimatenote.composeapp.generated.resources.Res
+import theultimatenote.composeapp.generated.resources.app_logo
 
 @Composable
 fun LoginScreen(
@@ -73,6 +77,12 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
+        Image(
+            painter = painterResource(Res.drawable.app_logo),
+            contentDescription = "Logo",
+            modifier = Modifier.size(120.dp),
+        )
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = "The Ultimate Note",
             style = MaterialTheme.typography.displayLarge,
