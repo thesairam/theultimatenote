@@ -1,5 +1,12 @@
 package com.theultimatenote.app.ui.screens.auth
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -171,9 +178,13 @@ fun SignUpScreen(
             )
 
             val error = localError ?: uiState.error
-            error?.let {
+            AnimatedVisibility(
+                visible = error != null,
+                enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+                exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
+            ) {
                 Text(
-                    text = it,
+                    text = error ?: "",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp),
@@ -193,14 +204,16 @@ fun SignUpScreen(
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 enabled = !uiState.isLoading,
             ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Text("Create Account", style = MaterialTheme.typography.labelLarge)
+                Crossfade(targetState = uiState.isLoading, animationSpec = tween(200)) { loading ->
+                    if (loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text("Create Account", style = MaterialTheme.typography.labelLarge)
+                    }
                 }
             }
 

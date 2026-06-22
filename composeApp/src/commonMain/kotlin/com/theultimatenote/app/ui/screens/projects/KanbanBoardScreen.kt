@@ -1,6 +1,15 @@
 package com.theultimatenote.app.ui.screens.projects
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -138,7 +147,8 @@ fun KanbanBoardScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        } else if (showMatrix) {
+        } else { Crossfade(targetState = showMatrix, animationSpec = tween(250)) { isMatrix ->
+        if (isMatrix) {
             EisenhowerMatrixView(
                 tasks = tasks,
                 columns = columns,
@@ -242,6 +252,8 @@ fun KanbanBoardScreen(
                 }
             }
         }
+        } // end Crossfade
+        }
     }
 }
 
@@ -268,9 +280,18 @@ private fun KanbanColumnCard(
     var newTaskUrgent by remember { mutableStateOf(false) }
     var newTaskImportant by remember { mutableStateOf(false) }
 
-    val borderColor = if (isDropTarget) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-    val borderWidth = if (isDropTarget) 2.dp else 0.75.dp
-    val bgAlpha = if (isDropTarget) 0.6f else 0.4f
+    val borderColor by animateColorAsState(
+        targetValue = if (isDropTarget) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+        animationSpec = tween(200),
+    )
+    val borderWidth by animateDpAsState(
+        targetValue = if (isDropTarget) 2.dp else 0.75.dp,
+        animationSpec = tween(200),
+    )
+    val bgAlpha by animateFloatAsState(
+        targetValue = if (isDropTarget) 0.6f else 0.4f,
+        animationSpec = tween(200),
+    )
 
     Card(
         modifier = Modifier
@@ -312,7 +333,11 @@ private fun KanbanColumnCard(
                 }
             }
 
-            if (showAddTask) {
+            AnimatedVisibility(
+                visible = showAddTask,
+                enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+                exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
+            ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

@@ -1,5 +1,12 @@
 package com.theultimatenote.app.ui.screens.auth
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -126,9 +133,13 @@ fun LoginScreen(
             enabled = !uiState.isLoading,
         )
 
-        uiState.error?.let { error ->
+        AnimatedVisibility(
+            visible = uiState.error != null,
+            enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+            exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
+        ) {
             Text(
-                text = error,
+                text = uiState.error ?: "",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp),
@@ -143,14 +154,16 @@ fun LoginScreen(
             enabled = !uiState.isLoading,
             shape = RoundedCornerShape(14.dp),
         ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp,
-                )
-            } else {
-                Text("Sign In", style = MaterialTheme.typography.labelLarge)
+            Crossfade(targetState = uiState.isLoading, animationSpec = tween(200)) { loading ->
+                if (loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text("Sign In", style = MaterialTheme.typography.labelLarge)
+                }
             }
         }
 

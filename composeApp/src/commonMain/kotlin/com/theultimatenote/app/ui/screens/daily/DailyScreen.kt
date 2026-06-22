@@ -1,5 +1,13 @@
 package com.theultimatenote.app.ui.screens.daily
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -120,7 +128,8 @@ fun DailyScreen() {
             }
         },
     ) { innerPadding ->
-        if (showMatrix) {
+        Crossfade(targetState = showMatrix, animationSpec = tween(250)) { isMatrix ->
+        if (isMatrix) {
             val allDailyTasks = dailyTasks + learningTasks
             val columns = dailyBoard?.columns ?: emptyList()
             EisenhowerMatrixView(
@@ -173,7 +182,11 @@ fun DailyScreen() {
                                 )
                             }
 
-                            if (isRecurring) {
+                            AnimatedVisibility(
+                                visible = isRecurring,
+                                enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+                                exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
+                            ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -369,6 +382,7 @@ fun DailyScreen() {
             }
         }
         } // end else (list view)
+        } // end Crossfade
     }
 
     if (showTimePicker) {
@@ -404,6 +418,12 @@ private fun DailyTaskItem(
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
 
+    val titleColor by animateColorAsState(
+        targetValue = if (task.isCompletedToday) MaterialTheme.colorScheme.onSurfaceVariant
+            else MaterialTheme.colorScheme.onSurface,
+        animationSpec = tween(250),
+    )
+
     Card(
         modifier = Modifier.fillMaxWidth().clickable { showEditDialog = true },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -426,8 +446,7 @@ private fun DailyTaskItem(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         textDecoration = if (task.isCompletedToday) TextDecoration.LineThrough else TextDecoration.None,
                     ),
-                    color = if (task.isCompletedToday) MaterialTheme.colorScheme.onSurfaceVariant
-                        else MaterialTheme.colorScheme.onSurface,
+                    color = titleColor,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )

@@ -1,5 +1,7 @@
 package com.theultimatenote.app.ui.screens.profile
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -202,14 +204,16 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uiState.isSaving,
                 ) {
-                    if (uiState.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                    } else {
-                        Text("Save Profile")
+                    Crossfade(targetState = uiState.isSaving, animationSpec = tween(200)) { saving ->
+                        if (saving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Text("Save Profile")
+                        }
                     }
                 }
 
@@ -313,20 +317,24 @@ fun ProfileScreen(
                     ),
                     enabled = !uiState.isDeleting,
                 ) {
-                    if (uiState.isDeleting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    } else {
-                        Icon(
-                            Icons.Default.DeleteForever,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(modifier = Modifier.padding(start = 8.dp))
-                        Text("Delete Account")
+                    Crossfade(targetState = uiState.isDeleting, animationSpec = tween(200)) { deleting ->
+                        if (deleting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        } else {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.DeleteForever,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(modifier = Modifier.padding(start = 8.dp))
+                                Text("Delete Account")
+                            }
+                        }
                     }
                 }
 

@@ -1,5 +1,7 @@
 package com.theultimatenote.app.ui.screens.notebooks
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -63,22 +65,33 @@ fun NotebooksScreen() {
     val viewModel: NotebooksViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState()
 
-    when {
-        uiState.isEditing && uiState.selectedPage != null -> {
-            PageEditorView(
-                page = uiState.selectedPage!!,
-                onSave = { title, content -> viewModel.savePage(title, content) },
-                onBack = { viewModel.goBackToPages() },
-            )
-        }
-        uiState.selectedNotebook != null -> {
-            PagesListView(
-                viewModel = viewModel,
-                notebookName = uiState.selectedNotebook!!.name,
-            )
-        }
-        else -> {
-            NotebooksListView(viewModel = viewModel)
+    val viewKey = when {
+        uiState.isEditing && uiState.selectedPage != null -> "editor"
+        uiState.selectedNotebook != null -> "pages"
+        else -> "notebooks"
+    }
+    Crossfade(targetState = viewKey, animationSpec = tween(250)) { state ->
+        when (state) {
+            "editor" -> {
+                uiState.selectedPage?.let { page ->
+                    PageEditorView(
+                        page = page,
+                        onSave = { title, content -> viewModel.savePage(title, content) },
+                        onBack = { viewModel.goBackToPages() },
+                    )
+                }
+            }
+            "pages" -> {
+                uiState.selectedNotebook?.let { notebook ->
+                    PagesListView(
+                        viewModel = viewModel,
+                        notebookName = notebook.name,
+                    )
+                }
+            }
+            else -> {
+                NotebooksListView(viewModel = viewModel)
+            }
         }
     }
 }

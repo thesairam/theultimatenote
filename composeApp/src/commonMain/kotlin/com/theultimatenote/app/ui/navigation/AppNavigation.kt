@@ -1,10 +1,14 @@
 package com.theultimatenote.app.ui.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -84,17 +88,19 @@ fun AppNavigation() {
     val authViewModel: AuthViewModel = koinViewModel()
     val authState by authViewModel.authState.collectAsState()
 
-    when (authState) {
-        AuthViewModel.AuthState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+    Crossfade(targetState = authState, animationSpec = tween(300)) { state ->
+        when (state) {
+            AuthViewModel.AuthState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
             }
+            AuthViewModel.AuthState.Authenticated -> MainNavigation(authViewModel)
+            AuthViewModel.AuthState.Unauthenticated -> AuthNavigation(authViewModel)
         }
-        AuthViewModel.AuthState.Authenticated -> MainNavigation(authViewModel)
-        AuthViewModel.AuthState.Unauthenticated -> AuthNavigation(authViewModel)
     }
 }
 
@@ -144,7 +150,11 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
 
     Scaffold(
         bottomBar = {
-            if (showBottomBar) {
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = slideInVertically(tween(200)) { it } + fadeIn(tween(200)),
+                exit = slideOutVertically(tween(150)) { it } + fadeOut(tween(150)),
+            ) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer,

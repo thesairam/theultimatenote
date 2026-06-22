@@ -1,5 +1,9 @@
 package com.theultimatenote.app.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -273,9 +277,18 @@ private fun QuadrantCard(
     onDrop: () -> Unit = {},
     draggedTaskId: String? = null,
 ) {
-    val borderColor = if (isDropTarget) accentColor else accentColor.copy(alpha = 0.3f)
-    val borderWidth = if (isDropTarget) 2.dp else 0.75.dp
-    val bgAlpha = if (isDropTarget) 0.15f else 0.06f
+    val borderColor by animateColorAsState(
+        targetValue = if (isDropTarget) accentColor else accentColor.copy(alpha = 0.3f),
+        animationSpec = tween(200),
+    )
+    val borderWidth by animateDpAsState(
+        targetValue = if (isDropTarget) 2.dp else 0.75.dp,
+        animationSpec = tween(200),
+    )
+    val bgAlpha by animateFloatAsState(
+        targetValue = if (isDropTarget) 0.15f else 0.06f,
+        animationSpec = tween(200),
+    )
 
     Card(
         modifier = modifier

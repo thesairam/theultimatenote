@@ -1,5 +1,12 @@
 package com.theultimatenote.app.ui.screens.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -331,45 +338,55 @@ private fun QuickAddTaskDialog(
                     }
                 }
 
-                if (isDailyProject) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        FilterChip(
-                            selected = isRecurring,
-                            onClick = {
-                                isRecurring = true
-                            },
-                            label = { Text("Recurring") },
-                        )
-                        FilterChip(
-                            selected = !isRecurring,
-                            onClick = {
-                                isRecurring = false
-                                scheduledTime = null
-                            },
-                            label = { Text("Temporary") },
-                        )
-                    }
-
-                    if (isRecurring) {
+                AnimatedVisibility(
+                    visible = isDailyProject,
+                    enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+                    exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
+                ) {
+                    Column {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(
-                                Icons.Default.Schedule,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                            FilterChip(
+                                selected = isRecurring,
+                                onClick = {
+                                    isRecurring = true
+                                },
+                                label = { Text("Recurring") },
                             )
-                            TextButton(onClick = { showTimePicker = true }) {
-                                Text(
-                                    text = scheduledTime ?: "Set reminder time",
-                                    color = if (scheduledTime != null) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                            FilterChip(
+                                selected = !isRecurring,
+                                onClick = {
+                                    isRecurring = false
+                                    scheduledTime = null
+                                },
+                                label = { Text("Temporary") },
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = isRecurring,
+                            enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+                            exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
                                 )
+                                TextButton(onClick = { showTimePicker = true }) {
+                                    Text(
+                                        text = scheduledTime ?: "Set reminder time",
+                                        color = if (scheduledTime != null) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                     }
@@ -471,6 +488,12 @@ private fun HomeTaskItem(
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
 
+    val titleColor by animateColorAsState(
+        targetValue = if (task.isCompletedToday) MaterialTheme.colorScheme.onSurfaceVariant
+            else MaterialTheme.colorScheme.onSurface,
+        animationSpec = tween(250),
+    )
+
     Card(
         modifier = Modifier.fillMaxWidth().clickable { showEditDialog = true },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -493,8 +516,7 @@ private fun HomeTaskItem(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         textDecoration = if (task.isCompletedToday) TextDecoration.LineThrough else TextDecoration.None,
                     ),
-                    color = if (task.isCompletedToday) MaterialTheme.colorScheme.onSurfaceVariant
-                        else MaterialTheme.colorScheme.onSurface,
+                    color = titleColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -525,7 +547,11 @@ private fun HomeTaskItem(
                     }
                 }
             }
-            if (!task.isCompletedToday) {
+            AnimatedVisibility(
+                visible = !task.isCompletedToday,
+                enter = fadeIn(tween(200)),
+                exit = fadeOut(tween(150)),
+            ) {
                 IconButton(
                     onClick = onStartPomodoro,
                     modifier = Modifier.size(40.dp),

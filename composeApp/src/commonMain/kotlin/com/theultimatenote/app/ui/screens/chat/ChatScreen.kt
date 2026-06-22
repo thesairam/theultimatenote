@@ -1,5 +1,7 @@
 package com.theultimatenote.app.ui.screens.chat
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -185,12 +187,16 @@ fun ChatScreen(
                     },
                     enabled = inputText.isNotBlank() && !uiState.isLoading,
                 ) {
+                    val sendTint by animateColorAsState(
+                        targetValue = if (inputText.isNotBlank() && !uiState.isLoading)
+                            MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        animationSpec = tween(200),
+                    )
                     Icon(
                         Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Send",
-                        tint = if (inputText.isNotBlank() && !uiState.isLoading)
-                            MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = sendTint,
                     )
                 }
             }

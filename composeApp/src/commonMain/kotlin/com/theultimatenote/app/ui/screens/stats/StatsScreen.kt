@@ -1,5 +1,7 @@
 package com.theultimatenote.app.ui.screens.stats
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -72,28 +74,30 @@ fun StatsScreen(
             )
         },
     ) { innerPadding ->
-        if (uiState.isLoading) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                TodayProgressCard(uiState)
-                PomodoroStatsCard(uiState)
-                BreakdownCard(uiState)
-                AllTimeFocusCard(uiState)
-                Spacer(modifier = Modifier.height(8.dp))
+        Crossfade(targetState = uiState.isLoading, animationSpec = tween(300)) { loading ->
+            if (loading) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    TodayProgressCard(uiState)
+                    PomodoroStatsCard(uiState)
+                    BreakdownCard(uiState)
+                    AllTimeFocusCard(uiState)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
     }
