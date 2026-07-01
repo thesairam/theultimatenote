@@ -88,7 +88,7 @@ fun AppNavigation() {
     val authViewModel: AuthViewModel = koinViewModel()
     val authState by authViewModel.authState.collectAsState()
 
-    Crossfade(targetState = authState, animationSpec = tween(300)) { state ->
+    Crossfade(targetState = authState, animationSpec = tween(150)) { state ->
         when (state) {
             AuthViewModel.AuthState.Loading -> {
                 Box(
@@ -111,10 +111,10 @@ private fun AuthNavigation(authViewModel: AuthViewModel) {
     NavHost(
         navController = navController,
         startDestination = LoginRoute,
-        enterTransition = { slideInHorizontally(tween(250)) { it / 3 } + fadeIn(tween(200)) },
-        exitTransition = { fadeOut(tween(150)) },
-        popEnterTransition = { slideInHorizontally(tween(250)) { -it / 3 } + fadeIn(tween(200)) },
-        popExitTransition = { slideOutHorizontally(tween(250)) { it / 3 } + fadeOut(tween(150)) },
+        enterTransition = { slideInHorizontally(tween(100)) { it / 3 } + fadeIn(tween(120)) },
+        exitTransition = { fadeOut(tween(100)) },
+        popEnterTransition = { slideInHorizontally(tween(100)) { -it / 3 } + fadeIn(tween(120)) },
+        popExitTransition = { slideOutHorizontally(tween(100)) { it / 3 } + fadeOut(tween(100)) },
     ) {
         composable<LoginRoute> {
             LoginScreen(
@@ -152,8 +152,8 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
         bottomBar = {
             AnimatedVisibility(
                 visible = showBottomBar,
-                enter = slideInVertically(tween(200)) { it } + fadeIn(tween(200)),
-                exit = slideOutVertically(tween(150)) { it } + fadeOut(tween(150)),
+                enter = slideInVertically(tween(120)) { it } + fadeIn(tween(120)),
+                exit = slideOutVertically(tween(100)) { it } + fadeOut(tween(100)),
             ) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
@@ -188,10 +188,10 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
             navController = navController,
             startDestination = HomeRoute,
             modifier = Modifier.padding(innerPadding),
-            enterTransition = { fadeIn(animationSpec = tween(200)) },
-            exitTransition = { fadeOut(animationSpec = tween(150)) },
-            popEnterTransition = { fadeIn(animationSpec = tween(200)) },
-            popExitTransition = { fadeOut(animationSpec = tween(150)) },
+            enterTransition = { fadeIn(animationSpec = tween(120)) },
+            exitTransition = { fadeOut(animationSpec = tween(100)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(120)) },
+            popExitTransition = { fadeOut(animationSpec = tween(100)) },
         ) {
             composable<HomeRoute> {
                 HomeScreen(
@@ -209,8 +209,8 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
                 )
             }
             composable<KanbanBoardRoute>(
-                enterTransition = { slideInHorizontally(tween(250)) { it / 3 } + fadeIn(tween(200)) },
-                popExitTransition = { slideOutHorizontally(tween(250)) { it / 3 } + fadeOut(tween(150)) },
+                enterTransition = { slideInHorizontally(tween(100)) { it / 3 } + fadeIn(tween(120)) },
+                popExitTransition = { slideOutHorizontally(tween(100)) { it / 3 } + fadeOut(tween(100)) },
             ) { backStackEntry ->
                 val route = backStackEntry.toRoute<KanbanBoardRoute>()
                 val koin = getKoin()
@@ -227,8 +227,8 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
             composable<DailyRoute> { DailyScreen() }
             composable<NotebooksRoute> { NotebooksScreen() }
             composable<ProfileRoute>(
-                enterTransition = { slideInHorizontally(tween(250)) { it / 3 } + fadeIn(tween(200)) },
-                popExitTransition = { slideOutHorizontally(tween(250)) { it / 3 } + fadeOut(tween(150)) },
+                enterTransition = { slideInHorizontally(tween(100)) { it / 3 } + fadeIn(tween(120)) },
+                popExitTransition = { slideOutHorizontally(tween(100)) { it / 3 } + fadeOut(tween(100)) },
             ) {
                 ProfileScreen(
                     onNavigateBack = { navController.popBackStack() },
@@ -236,14 +236,14 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
                 )
             }
             composable<ChatRoute>(
-                enterTransition = { slideInHorizontally(tween(250)) { it / 3 } + fadeIn(tween(200)) },
-                popExitTransition = { slideOutHorizontally(tween(250)) { it / 3 } + fadeOut(tween(150)) },
+                enterTransition = { slideInHorizontally(tween(100)) { it / 3 } + fadeIn(tween(120)) },
+                popExitTransition = { slideOutHorizontally(tween(100)) { it / 3 } + fadeOut(tween(100)) },
             ) {
                 ChatScreen(onNavigateBack = { navController.popBackStack() })
             }
             composable<StatsRoute>(
-                enterTransition = { slideInHorizontally(tween(250)) { it / 3 } + fadeIn(tween(200)) },
-                popExitTransition = { slideOutHorizontally(tween(250)) { it / 3 } + fadeOut(tween(150)) },
+                enterTransition = { slideInHorizontally(tween(100)) { it / 3 } + fadeIn(tween(120)) },
+                popExitTransition = { slideOutHorizontally(tween(100)) { it / 3 } + fadeOut(tween(100)) },
             ) {
                 StatsScreen(onNavigateBack = { navController.popBackStack() })
             }

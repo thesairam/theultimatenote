@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -27,6 +28,14 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+
+data class DailyUiState(
+    val dailyProject: Project? = null,
+    val learningProject: Project? = null,
+    val dailyBoard: KanbanBoard? = null,
+    val dailyTasks: List<Task> = emptyList(),
+    val learningTasks: List<Task> = emptyList(),
+)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DailyViewModel(
@@ -46,31 +55,42 @@ class DailyViewModel(
             if (user != null) projectRepository.getProjects(user.uid) else flowOf(emptyList())
         }
 
-    val dailyProject: StateFlow<Project?> = allProjects
+    private val dailyProjectFlow = allProjects
         .map { projects -> projects.find { it.type == ProjectType.DAILY } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val learningProject: StateFlow<Project?> = allProjects
+    private val learningProjectFlow = allProjects
         .map { projects -> projects.find { it.type == ProjectType.LEARNING } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val dailyBoard: StateFlow<KanbanBoard?> = dailyProject
+    private val dailyBoardFlow = dailyProjectFlow
         .flatMapLatest { project ->
             if (project != null) projectRepository.getBoard(project.id) else flowOf(null)
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val dailyTasks: StateFlow<List<Task>> = dailyProject
+    private val dailyTasksFlow = dailyProjectFlow
         .flatMapLatest { project ->
             if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val learningTasks: StateFlow<List<Task>> = learningProject
+    private val learningTasksFlow = learningProjectFlow
         .flatMapLatest { project ->
             if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val uiState: StateFlow<DailyUiState> = combine(
+        dailyProjectFlow,
+        learningProjectFlow,
+        dailyBoardFlow,
+        dailyTasksFlow,
+        learningTasksFlow,
+    ) { daily, learning, board, dailyTasks, learningTasks ->
+        DailyUiState(
+            dailyProject = daily,
+            learningProject = learning,
+            dailyBoard = board,
+            dailyTasks = dailyTasks,
+            learningTasks = learningTasks,
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyUiState())
 
     init {
         resetRecurringTasksIfNeeded()
@@ -92,14 +112,15 @@ class DailyViewModel(
         isUrgent: Boolean? = null,
         isImportant: Boolean? = null,
     ) {
-        val project = dailyProject.value ?: return
+        val project = uiState.value.dailyProject ?: return
         if (title.isBlank()) return
         val columnId = if (isRecurring) "recurring" else "temporary"
         viewModelScope.launch {
             val user = authRepository.currentUser.first() ?: return@launch
             val sub = subscriptionRepository.getSubscription(user.uid).first()
             if (sub.subscriptionTier == SubscriptionTier.FREE) {
-                val totalActive = (dailyTasks.value + learningTasks.value).count { !it.isCompletedToday }
+                val state = uiState.value
+                val totalActive = (state.dailyTasks + state.learningTasks).count { !it.isCompletedToday }
                 if (totalActive >= SubscriptionLimits.FREE_MAX_ACTIVE_TASKS) {
                     _limitReached.value = "You've reached the free limit of ${SubscriptionLimits.FREE_MAX_ACTIVE_TASKS} active tasks. Upgrade to Pro for unlimited tasks."
                     return@launch
@@ -124,7 +145,7 @@ class DailyViewModel(
     }
 
     fun addLearningTask(title: String, pathColumnId: String) {
-        val project = learningProject.value ?: return
+        val project = uiState.value.learningProject ?: return
         if (title.isBlank()) return
         viewModelScope.launch {
             taskRepository.createTask(

@@ -350,7 +350,7 @@ private fun QuickAddTaskDialog(
 
                 AnimatedVisibility(
                     visible = isDailyProject,
-                    enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+                    enter = expandVertically(tween(100)) + fadeIn(tween(100)),
                     exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
                 ) {
                     Column {
@@ -378,7 +378,7 @@ private fun QuickAddTaskDialog(
 
                         AnimatedVisibility(
                             visible = isRecurring,
-                            enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+                            enter = expandVertically(tween(100)) + fadeIn(tween(100)),
                             exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
                         ) {
                             Row(
@@ -501,7 +501,7 @@ private fun HomeTaskItem(
     val titleColor by animateColorAsState(
         targetValue = if (task.isCompletedToday) MaterialTheme.colorScheme.onSurfaceVariant
             else MaterialTheme.colorScheme.onSurface,
-        animationSpec = tween(250),
+        animationSpec = tween(120),
     )
 
     Card(
@@ -559,7 +559,7 @@ private fun HomeTaskItem(
             }
             AnimatedVisibility(
                 visible = !task.isCompletedToday,
-                enter = fadeIn(tween(200)),
+                enter = fadeIn(tween(100)),
                 exit = fadeOut(tween(150)),
             ) {
                 IconButton(

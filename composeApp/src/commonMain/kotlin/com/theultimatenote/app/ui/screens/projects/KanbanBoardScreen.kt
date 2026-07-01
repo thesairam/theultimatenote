@@ -147,7 +147,7 @@ fun KanbanBoardScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        } else { Crossfade(targetState = showMatrix, animationSpec = tween(250)) { isMatrix ->
+        } else { Crossfade(targetState = showMatrix, animationSpec = tween(120)) { isMatrix ->
         if (isMatrix) {
             EisenhowerMatrixView(
                 tasks = tasks,
@@ -283,15 +283,15 @@ private fun KanbanColumnCard(
 
     val borderColor by animateColorAsState(
         targetValue = if (isDropTarget) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-        animationSpec = tween(200),
+        animationSpec = tween(100),
     )
     val borderWidth by animateDpAsState(
         targetValue = if (isDropTarget) 2.dp else 0.75.dp,
-        animationSpec = tween(200),
+        animationSpec = tween(100),
     )
     val bgAlpha by animateFloatAsState(
         targetValue = if (isDropTarget) 0.6f else 0.4f,
-        animationSpec = tween(200),
+        animationSpec = tween(100),
     )
 
     Card(
@@ -336,7 +336,7 @@ private fun KanbanColumnCard(
 
             AnimatedVisibility(
                 visible = showAddTask,
-                enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+                enter = expandVertically(tween(100)) + fadeIn(tween(100)),
                 exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {

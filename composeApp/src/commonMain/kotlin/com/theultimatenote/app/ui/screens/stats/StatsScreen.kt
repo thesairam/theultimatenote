@@ -74,7 +74,7 @@ fun StatsScreen(
             )
         },
     ) { innerPadding ->
-        Crossfade(targetState = uiState.isLoading, animationSpec = tween(300)) { loading ->
+        Crossfade(targetState = uiState.isLoading, animationSpec = tween(150)) { loading ->
             if (loading) {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),

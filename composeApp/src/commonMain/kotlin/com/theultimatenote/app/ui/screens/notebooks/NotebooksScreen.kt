@@ -77,7 +77,7 @@ fun NotebooksScreen() {
         uiState.selectedNotebook != null -> "pages"
         else -> "notebooks"
     }
-    Crossfade(targetState = viewKey, animationSpec = tween(250)) { state ->
+    Crossfade(targetState = viewKey, animationSpec = tween(120)) { state ->
         when (state) {
             "editor" -> {
                 uiState.selectedPage?.let { page ->

@@ -290,15 +290,15 @@ private fun QuadrantCard(
 ) {
     val borderColor by animateColorAsState(
         targetValue = if (isDropTarget) accentColor else accentColor.copy(alpha = 0.3f),
-        animationSpec = tween(200),
+        animationSpec = tween(100),
     )
     val borderWidth by animateDpAsState(
         targetValue = if (isDropTarget) 2.dp else 0.75.dp,
-        animationSpec = tween(200),
+        animationSpec = tween(100),
     )
     val bgAlpha by animateFloatAsState(
         targetValue = if (isDropTarget) 0.15f else 0.06f,
-        animationSpec = tween(200),
+        animationSpec = tween(100),
     )
 
     Card(

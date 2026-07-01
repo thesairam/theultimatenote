@@ -90,7 +90,7 @@ fun ProjectsScreen(
             }
         },
     ) { innerPadding ->
-        Crossfade(targetState = projects.isEmpty() && !isCreating, animationSpec = tween(250)) { isEmpty ->
+        Crossfade(targetState = projects.isEmpty() && !isCreating, animationSpec = tween(120)) { isEmpty ->
             if (isEmpty) {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(innerPadding).padding(24.dp),

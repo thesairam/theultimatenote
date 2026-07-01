@@ -204,7 +204,7 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uiState.isSaving,
                 ) {
-                    Crossfade(targetState = uiState.isSaving, animationSpec = tween(200)) { saving ->
+                    Crossfade(targetState = uiState.isSaving, animationSpec = tween(100)) { saving ->
                         if (saving) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
@@ -317,7 +317,7 @@ fun ProfileScreen(
                     ),
                     enabled = !uiState.isDeleting,
                 ) {
-                    Crossfade(targetState = uiState.isDeleting, animationSpec = tween(200)) { deleting ->
+                    Crossfade(targetState = uiState.isDeleting, animationSpec = tween(100)) { deleting ->
                         if (deleting) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),

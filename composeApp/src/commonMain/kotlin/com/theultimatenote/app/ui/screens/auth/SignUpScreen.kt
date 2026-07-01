@@ -180,7 +180,7 @@ fun SignUpScreen(
             val error = localError ?: uiState.error
             AnimatedVisibility(
                 visible = error != null,
-                enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+                enter = expandVertically(tween(100)) + fadeIn(tween(100)),
                 exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
             ) {
                 Text(
@@ -204,7 +204,7 @@ fun SignUpScreen(
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 enabled = !uiState.isLoading,
             ) {
-                Crossfade(targetState = uiState.isLoading, animationSpec = tween(200)) { loading ->
+                Crossfade(targetState = uiState.isLoading, animationSpec = tween(100)) { loading ->
                     if (loading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),

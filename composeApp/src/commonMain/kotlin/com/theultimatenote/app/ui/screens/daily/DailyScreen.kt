@@ -74,11 +74,12 @@ import org.koin.compose.viewmodel.koinViewModel
 fun DailyScreen() {
     val viewModel: DailyViewModel = koinViewModel()
     val subscriptionViewModel: com.theultimatenote.app.ui.screens.subscription.SubscriptionViewModel = koinViewModel()
-    val dailyTasks by viewModel.dailyTasks.collectAsState()
-    val learningTasks by viewModel.learningTasks.collectAsState()
-    val dailyProject by viewModel.dailyProject.collectAsState()
-    val learningProject by viewModel.learningProject.collectAsState()
-    val dailyBoard by viewModel.dailyBoard.collectAsState()
+    val state by viewModel.uiState.collectAsState()
+    val dailyTasks = state.dailyTasks
+    val learningTasks = state.learningTasks
+    val dailyProject = state.dailyProject
+    val learningProject = state.learningProject
+    val dailyBoard = state.dailyBoard
     val dailyLimitReached by viewModel.limitReached.collectAsState()
 
     var showAddTask by remember { mutableStateOf(false) }
@@ -130,7 +131,7 @@ fun DailyScreen() {
             }
         },
     ) { innerPadding ->
-        Crossfade(targetState = showMatrix, animationSpec = tween(250)) { isMatrix ->
+        Crossfade(targetState = showMatrix, animationSpec = tween(120)) { isMatrix ->
         if (isMatrix) {
             val allDailyTasks = dailyTasks + learningTasks
             val columns = dailyBoard?.columns ?: emptyList()
@@ -186,7 +187,7 @@ fun DailyScreen() {
 
                             AnimatedVisibility(
                                 visible = isRecurring,
-                                enter = expandVertically(tween(200)) + fadeIn(tween(200)),
+                                enter = expandVertically(tween(100)) + fadeIn(tween(100)),
                                 exit = shrinkVertically(tween(150)) + fadeOut(tween(150)),
                             ) {
                                 Row(
@@ -431,7 +432,7 @@ private fun DailyTaskItem(
     val titleColor by animateColorAsState(
         targetValue = if (task.isCompletedToday) MaterialTheme.colorScheme.onSurfaceVariant
             else MaterialTheme.colorScheme.onSurface,
-        animationSpec = tween(250),
+        animationSpec = tween(120),
     )
 
     Card(

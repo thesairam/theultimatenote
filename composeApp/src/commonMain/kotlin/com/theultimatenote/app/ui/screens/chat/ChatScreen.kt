@@ -194,7 +194,7 @@ fun ChatScreen(
                         targetValue = if (inputText.isNotBlank() && !uiState.isLoading)
                             MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
-                        animationSpec = tween(200),
+                        animationSpec = tween(100),
                     )
                     Icon(
                         Icons.AutoMirrored.Filled.Send,
