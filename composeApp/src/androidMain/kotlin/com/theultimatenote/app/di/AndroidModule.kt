@@ -17,6 +17,12 @@ import com.theultimatenote.app.data.repository.NotebookRepository
 import com.theultimatenote.app.data.repository.NotificationScheduler
 import com.theultimatenote.app.data.repository.PomodoroRepository
 import com.theultimatenote.app.data.repository.ProjectRepository
+import com.theultimatenote.app.data.repository.SubscriptionRepository
+import com.theultimatenote.app.data.repository.FirebaseSubscriptionRepository
+import com.theultimatenote.app.data.repository.BillingManager
+import com.theultimatenote.app.data.repository.AndroidBillingManager
+import com.theultimatenote.app.data.repository.ImageStorageRepository
+import com.theultimatenote.app.data.repository.FirebaseImageStorageRepository
 import com.theultimatenote.app.data.repository.TaskRepository
 import com.theultimatenote.app.data.repository.UserRepository
 import com.theultimatenote.app.notifications.AndroidNotificationScheduler
@@ -33,5 +39,8 @@ actual fun platformModule(): Module = module {
     single { AiService(groqApiKey = BuildConfig.GROQ_API_KEY, geminiApiKeys = listOf(BuildConfig.GEMINI_API_KEY_1, BuildConfig.GEMINI_API_KEY_2)) }
     single<NotificationScheduler> { AndroidNotificationScheduler(AndroidAppContext.context) }
     single<PomodoroRepository> { FirebasePomodoroRepository() }
+    single<SubscriptionRepository> { FirebaseSubscriptionRepository() }
+    single<BillingManager> { AndroidBillingManager(AndroidAppContext.context, get()) }
+    single<ImageStorageRepository> { FirebaseImageStorageRepository() }
     single { GoogleCalendarSyncService(AndroidAppContext.context) }
 }

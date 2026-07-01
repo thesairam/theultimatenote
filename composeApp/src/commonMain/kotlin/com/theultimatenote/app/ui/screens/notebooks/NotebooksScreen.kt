@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FormatBold
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Link
@@ -49,6 +50,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,11 +60,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.Notebook
 import com.theultimatenote.app.data.model.NotebookPage
+import com.theultimatenote.app.ui.components.ImageAttachmentRow
+import com.theultimatenote.app.ui.components.rememberImagePickerLauncher
+import com.theultimatenote.app.ui.components.UpgradeDialog
+import com.theultimatenote.app.ui.screens.subscription.SubscriptionViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun NotebooksScreen() {
     val viewModel: NotebooksViewModel = koinViewModel()
+    val subscriptionViewModel: SubscriptionViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState()
 
     val viewKey = when {
@@ -76,8 +83,15 @@ fun NotebooksScreen() {
                 uiState.selectedPage?.let { page ->
                     PageEditorView(
                         page = page,
-                        onSave = { title, content -> viewModel.savePage(title, content) },
+                        onSave = { title, content, images -> viewModel.savePage(title, content, images) },
                         onBack = { viewModel.goBackToPages() },
+                        onImagePicked = { bytes ->
+                            viewModel.uploadImage(bytes) { url ->
+                                val currentPage = viewModel.uiState.value.selectedPage ?: return@uploadImage
+                                val updatedUrls = currentPage.imageUrls + url
+                                viewModel.savePage(currentPage.title, currentPage.content, updatedUrls)
+                            }
+                        },
                     )
                 }
             }
@@ -93,6 +107,14 @@ fun NotebooksScreen() {
                 NotebooksListView(viewModel = viewModel)
             }
         }
+    }
+
+    uiState.limitReached?.let { reason ->
+        UpgradeDialog(
+            reason = reason,
+            onUpgrade = { subscriptionViewModel.launchUpgradeFlow(); viewModel.dismissLimit() },
+            onDismiss = { viewModel.dismissLimit() },
+        )
     }
 }
 
@@ -390,11 +412,13 @@ private fun PageCard(
 @Composable
 private fun PageEditorView(
     page: NotebookPage,
-    onSave: (String, String) -> Unit,
+    onSave: (String, String, List<String>) -> Unit,
     onBack: () -> Unit,
+    onImagePicked: ((ByteArray) -> Unit)? = null,
 ) {
     var title by remember(page.id) { mutableStateOf(page.title) }
     var content by remember(page.id) { mutableStateOf(page.content) }
+    val imageUrls = remember(page.id) { mutableStateListOf<String>().also { it.addAll(page.imageUrls) } }
 
     Scaffold(
         topBar = {
@@ -410,7 +434,7 @@ private fun PageEditorView(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onSave(title, content) }) {
+                    IconButton(onClick = { onSave(title, content, imageUrls.toList()) }) {
                         Icon(
                             Icons.Default.Save,
                             contentDescription = "Save",
@@ -469,6 +493,20 @@ private fun PageEditorView(
                 FilledTonalIconButton(onClick = { content += "\n```\ncode\n```" }) {
                     Icon(Icons.Default.Code, contentDescription = "Code Block", modifier = Modifier.size(20.dp))
                 }
+                if (onImagePicked != null) {
+                    val launchPicker = rememberImagePickerLauncher(onImagePicked = onImagePicked)
+                    FilledTonalIconButton(onClick = launchPicker) {
+                        Icon(Icons.Default.Image, contentDescription = "Add Image", modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+
+            if (imageUrls.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                ImageAttachmentRow(
+                    imageUrls = imageUrls.toList(),
+                    onRemove = { index -> imageUrls.removeAt(index) },
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))

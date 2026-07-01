@@ -81,8 +81,10 @@ fun HomeScreen(
     onNavigateToStats: () -> Unit = {},
 ) {
     val viewModel: HomeViewModel = koinViewModel()
+    val subscriptionViewModel: com.theultimatenote.app.ui.screens.subscription.SubscriptionViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState()
     val projects by viewModel.projects.collectAsState()
+    val limitReached by viewModel.limitReached.collectAsState()
     var showQuickAdd by remember { mutableStateOf(false) }
     var pomodoroTask by remember { mutableStateOf<Task?>(null) }
 
@@ -270,6 +272,14 @@ fun HomeScreen(
                 pomodoroTask = null
             },
             onDismiss = { pomodoroTask = null },
+        )
+    }
+
+    limitReached?.let { reason ->
+        com.theultimatenote.app.ui.components.UpgradeDialog(
+            reason = reason,
+            onUpgrade = { subscriptionViewModel.launchUpgradeFlow(); viewModel.dismissLimit() },
+            onDismiss = { viewModel.dismissLimit() },
         )
     }
 }

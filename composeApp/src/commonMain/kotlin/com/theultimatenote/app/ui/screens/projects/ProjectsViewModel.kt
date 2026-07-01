@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
+import com.theultimatenote.app.data.model.SubscriptionLimits
+import com.theultimatenote.app.data.model.SubscriptionTier
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.NotebookRepository
 import com.theultimatenote.app.data.repository.ProjectRepository
+import com.theultimatenote.app.data.repository.SubscriptionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,10 +27,16 @@ class ProjectsViewModel(
     private val projectRepository: ProjectRepository,
     private val authRepository: AuthRepository,
     private val notebookRepository: NotebookRepository,
+    private val subscriptionRepository: SubscriptionRepository,
 ) : ViewModel() {
 
     private val _isCreating = MutableStateFlow(false)
     val isCreating: StateFlow<Boolean> = _isCreating.asStateFlow()
+
+    private val _limitReached = MutableStateFlow<String?>(null)
+    val limitReached: StateFlow<String?> = _limitReached.asStateFlow()
+
+    fun dismissLimit() { _limitReached.value = null }
 
     val projects: StateFlow<List<Project>> = authRepository.currentUser
         .flatMapLatest { user ->
@@ -39,6 +48,14 @@ class ProjectsViewModel(
         if (name.isBlank()) return
         viewModelScope.launch {
             val user = authRepository.currentUser.first() ?: return@launch
+            val sub = subscriptionRepository.getSubscription(user.uid).first()
+            if (sub.subscriptionTier == SubscriptionTier.FREE) {
+                val regularCount = projects.value.count { it.type == ProjectType.REGULAR }
+                if (regularCount >= SubscriptionLimits.FREE_MAX_PROJECTS) {
+                    _limitReached.value = "You've reached the free limit of ${SubscriptionLimits.FREE_MAX_PROJECTS} projects. Upgrade to Pro for unlimited projects."
+                    return@launch
+                }
+            }
             _isCreating.value = true
             val projectId = projectRepository.createProject(
                 Project(

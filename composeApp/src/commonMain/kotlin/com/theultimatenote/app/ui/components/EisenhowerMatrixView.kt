@@ -118,6 +118,17 @@ fun EisenhowerMatrixView(
         Quadrant.LOW_PRIORITY to MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
+    val quadrantTasks = remember(nonCompleted) {
+        nonCompleted.groupBy {
+            when {
+                it.isUrgent && it.isImportant -> Quadrant.DO_FIRST
+                !it.isUrgent && it.isImportant -> Quadrant.SCHEDULE
+                it.isUrgent && !it.isImportant -> Quadrant.QUICK_WIN
+                else -> Quadrant.LOW_PRIORITY
+            }
+        }
+    }
+
     var containerRootPos by remember { mutableStateOf(Offset.Zero) }
     Box(
         modifier = modifier.onGloballyPositioned { coords ->
@@ -128,7 +139,7 @@ fun EisenhowerMatrixView(
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 QuadrantCard(
                     quadrant = Quadrant.DO_FIRST,
-                    tasks = nonCompleted.filter { it.isUrgent && it.isImportant },
+                    tasks = quadrantTasks[Quadrant.DO_FIRST] ?: emptyList(),
                     columns = columns,
                     allTasks = nonCompleted,
                     onToggleComplete = onToggleComplete,
@@ -147,7 +158,7 @@ fun EisenhowerMatrixView(
                 Spacer(modifier = Modifier.width(8.dp))
                 QuadrantCard(
                     quadrant = Quadrant.SCHEDULE,
-                    tasks = nonCompleted.filter { !it.isUrgent && it.isImportant },
+                    tasks = quadrantTasks[Quadrant.SCHEDULE] ?: emptyList(),
                     columns = columns,
                     allTasks = nonCompleted,
                     onToggleComplete = onToggleComplete,
@@ -168,7 +179,7 @@ fun EisenhowerMatrixView(
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 QuadrantCard(
                     quadrant = Quadrant.QUICK_WIN,
-                    tasks = nonCompleted.filter { it.isUrgent && !it.isImportant },
+                    tasks = quadrantTasks[Quadrant.QUICK_WIN] ?: emptyList(),
                     columns = columns,
                     allTasks = nonCompleted,
                     onToggleComplete = onToggleComplete,
@@ -187,7 +198,7 @@ fun EisenhowerMatrixView(
                 Spacer(modifier = Modifier.width(8.dp))
                 QuadrantCard(
                     quadrant = Quadrant.LOW_PRIORITY,
-                    tasks = nonCompleted.filter { !it.isUrgent && !it.isImportant },
+                    tasks = quadrantTasks[Quadrant.LOW_PRIORITY] ?: emptyList(),
                     columns = columns,
                     allTasks = nonCompleted,
                     onToggleComplete = onToggleComplete,

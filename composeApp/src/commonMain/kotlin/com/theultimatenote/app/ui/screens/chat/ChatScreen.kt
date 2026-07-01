@@ -55,6 +55,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.ChatAction
 import com.theultimatenote.app.data.model.ChatMessage
+import com.theultimatenote.app.ui.components.UpgradeDialog
+import com.theultimatenote.app.ui.screens.subscription.SubscriptionViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,6 +65,7 @@ fun ChatScreen(
     onNavigateBack: () -> Unit = {},
 ) {
     val viewModel: ChatViewModel = koinViewModel()
+    val subscriptionViewModel: SubscriptionViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState()
     var inputText by remember { mutableStateOf("") }
     var enterSends by remember { mutableStateOf(true) }
@@ -201,6 +204,14 @@ fun ChatScreen(
                 }
             }
         }
+    }
+
+    uiState.limitReached?.let { reason ->
+        UpgradeDialog(
+            reason = reason,
+            onUpgrade = { subscriptionViewModel.launchUpgradeFlow(); viewModel.dismissLimit() },
+            onDismiss = { viewModel.dismissLimit() },
+        )
     }
 }
 

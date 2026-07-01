@@ -4,14 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theultimatenote.app.data.model.Notebook
 import com.theultimatenote.app.data.model.NotebookPage
+import com.theultimatenote.app.data.model.SubscriptionLimits
+import com.theultimatenote.app.data.model.SubscriptionTier
 import com.theultimatenote.app.data.repository.AuthRepository
+import com.theultimatenote.app.data.repository.ImageStorageRepository
 import com.theultimatenote.app.data.repository.NotebookRepository
+import com.theultimatenote.app.data.repository.SubscriptionRepository
+import kotlinx.datetime.Clock
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -22,12 +28,15 @@ data class NotebooksUiState(
     val selectedPage: NotebookPage? = null,
     val isEditing: Boolean = false,
     val error: String? = null,
+    val limitReached: String? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class NotebooksViewModel(
     private val authRepository: AuthRepository,
     private val notebookRepository: NotebookRepository,
+    private val subscriptionRepository: SubscriptionRepository,
+    private val imageStorageRepository: ImageStorageRepository,
 ) : ViewModel() {
 
     val notebooks: StateFlow<List<Notebook>> = authRepository.currentUser
@@ -97,10 +106,25 @@ class NotebooksViewModel(
         }
     }
 
+    fun dismissLimit() {
+        _uiState.value = _uiState.value.copy(limitReached = null)
+    }
+
     fun createPage(title: String) {
         val notebook = _uiState.value.selectedNotebook ?: return
         viewModelScope.launch {
             try {
+                val user = authRepository.currentUser.stateIn(viewModelScope).value ?: return@launch
+                val sub = subscriptionRepository.getSubscription(user.uid).first()
+                if (sub.subscriptionTier == SubscriptionTier.FREE) {
+                    val currentPageCount = _pages.value.size
+                    if (currentPageCount >= SubscriptionLimits.FREE_MAX_NOTEBOOK_PAGES) {
+                        _uiState.value = _uiState.value.copy(
+                            limitReached = "You've reached the free limit of ${SubscriptionLimits.FREE_MAX_NOTEBOOK_PAGES} pages per notebook. Upgrade to Pro for unlimited pages."
+                        )
+                        return@launch
+                    }
+                }
                 val now = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
                 notebookRepository.createPage(
                     NotebookPage(
@@ -118,9 +142,9 @@ class NotebooksViewModel(
         }
     }
 
-    fun savePage(title: String, content: String) {
+    fun savePage(title: String, content: String, imageUrls: List<String> = emptyList()) {
         val page = _uiState.value.selectedPage ?: return
-        val updated = page.copy(title = title, content = content)
+        val updated = page.copy(title = title, content = content, imageUrls = imageUrls)
         viewModelScope.launch {
             try {
                 notebookRepository.updatePage(updated)
@@ -128,6 +152,15 @@ class NotebooksViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
             }
+        }
+    }
+
+    fun uploadImage(imageBytes: ByteArray, onResult: (String) -> Unit) {
+        viewModelScope.launch {
+            val user = authRepository.currentUser.first() ?: return@launch
+            val fileName = "notebook_${Clock.System.now().toEpochMilliseconds()}.jpg"
+            val url = imageStorageRepository.uploadImage(user.uid, imageBytes, fileName)
+            onResult(url)
         }
     }
 

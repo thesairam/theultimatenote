@@ -6,10 +6,13 @@ import com.theultimatenote.app.data.model.ChatAction
 import com.theultimatenote.app.data.model.ChatMessage
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
+import com.theultimatenote.app.data.model.SubscriptionLimits
+import com.theultimatenote.app.data.model.SubscriptionTier
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.ChatRepository
 import com.theultimatenote.app.data.repository.AiService
 import com.theultimatenote.app.data.repository.ProjectRepository
+import com.theultimatenote.app.data.repository.SubscriptionRepository
 import com.theultimatenote.app.data.repository.TaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +21,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 
 data class ChatUiState(
@@ -26,6 +31,7 @@ data class ChatUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val isHistoryLoaded: Boolean = false,
+    val limitReached: String? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -35,6 +41,7 @@ class ChatViewModel(
     private val chatRepository: ChatRepository,
     private val projectRepository: ProjectRepository,
     private val taskRepository: TaskRepository,
+    private val subscriptionRepository: SubscriptionRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -66,6 +73,10 @@ class ChatViewModel(
         }
     }
 
+    fun dismissLimit() {
+        _uiState.value = _uiState.value.copy(limitReached = null)
+    }
+
     fun sendMessage(text: String) {
         if (text.isBlank() || userId == null) return
 
@@ -83,6 +94,18 @@ class ChatViewModel(
 
         viewModelScope.launch {
             try {
+                val sub = subscriptionRepository.getSubscription(userId!!).first()
+                if (sub.subscriptionTier == SubscriptionTier.FREE) {
+                    val count = subscriptionRepository.getTodayAiMessageCount(userId!!)
+                    if (count >= SubscriptionLimits.FREE_MAX_AI_MESSAGES_PER_DAY) {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            limitReached = "You've used all ${SubscriptionLimits.FREE_MAX_AI_MESSAGES_PER_DAY} AI messages for today. Upgrade to Pro for unlimited AI chat.",
+                        )
+                        return@launch
+                    }
+                }
+                subscriptionRepository.incrementAiMessageCount(userId!!)
                 chatRepository.saveMessage(userId!!, userMessage)
 
                 val systemContext = buildSystemContext()
@@ -183,8 +206,8 @@ class ChatViewModel(
         )
     }
 
-    private suspend fun buildSystemContext(): String {
-        val user = authRepository.currentUser.first() ?: return ""
+    private suspend fun buildSystemContext(): String = withContext(Dispatchers.Default) {
+        val user = authRepository.currentUser.first() ?: return@withContext ""
         val projects = projectRepository.getProjects(user.uid).first()
 
         val sb = StringBuilder()
@@ -228,7 +251,7 @@ class ChatViewModel(
         sb.appendLine()
         sb.appendLine("Be helpful, concise, and proactive about suggesting organization. If the user discusses ideas, suggest tasks or projects that would help them stay organized.")
 
-        return sb.toString()
+        sb.toString()
     }
 
     private fun parseActions(rawText: String): Pair<String, List<ChatAction>> {

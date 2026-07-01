@@ -9,6 +9,7 @@ import com.theultimatenote.app.ui.screens.profile.ProfileViewModel
 import com.theultimatenote.app.ui.screens.projects.KanbanViewModel
 import com.theultimatenote.app.ui.screens.projects.ProjectsViewModel
 import com.theultimatenote.app.ui.screens.stats.StatsViewModel
+import com.theultimatenote.app.ui.screens.subscription.SubscriptionViewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -23,5 +24,6 @@ val appModule = module {
     viewModelOf(::ProfileViewModel)
     viewModelOf(::ChatViewModel)
     viewModelOf(::StatsViewModel)
+    viewModelOf(::SubscriptionViewModel)
     factory { (projectId: String) -> KanbanViewModel(projectId, get(), get()) }
 }

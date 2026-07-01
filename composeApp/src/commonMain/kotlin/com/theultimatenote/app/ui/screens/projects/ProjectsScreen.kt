@@ -49,6 +49,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
+import com.theultimatenote.app.ui.components.UpgradeDialog
+import com.theultimatenote.app.ui.screens.subscription.SubscriptionViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,8 +59,10 @@ fun ProjectsScreen(
     onNavigateToBoard: (projectId: String, projectName: String, projectType: String) -> Unit = { _, _, _ -> },
 ) {
     val viewModel: ProjectsViewModel = koinViewModel()
+    val subscriptionViewModel: SubscriptionViewModel = koinViewModel()
     val projects by viewModel.projects.collectAsState()
     val isCreating by viewModel.isCreating.collectAsState()
+    val limitReached by viewModel.limitReached.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -129,6 +133,14 @@ fun ProjectsScreen(
                 viewModel.createProject(name)
                 showCreateDialog = false
             },
+        )
+    }
+
+    limitReached?.let { reason ->
+        UpgradeDialog(
+            reason = reason,
+            onUpgrade = { subscriptionViewModel.launchUpgradeFlow(); viewModel.dismissLimit() },
+            onDismiss = { viewModel.dismissLimit() },
         )
     }
 }

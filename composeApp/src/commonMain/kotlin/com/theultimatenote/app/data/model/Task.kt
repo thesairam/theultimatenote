@@ -1,5 +1,6 @@
 package com.theultimatenote.app.data.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -9,6 +10,15 @@ enum class TaskStatus {
     DONE,
 }
 
+@Immutable
+@Serializable
+data class ChecklistItem(
+    val id: String = "",
+    val text: String = "",
+    val isChecked: Boolean = false,
+)
+
+@Immutable
 @Serializable
 data class Task(
     val id: String = "",
@@ -28,4 +38,6 @@ data class Task(
     val isImportant: Boolean = false,
     val calendarEventId: String? = null,
     val calendarProvider: String? = null,
+    val checklist: List<ChecklistItem> = emptyList(),
+    val imageUrls: List<String> = emptyList(),
 )

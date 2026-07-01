@@ -55,10 +55,13 @@ kotlin {
 
             implementation(libs.firebase.auth)
             implementation(libs.firebase.firestore)
+            implementation(libs.firebase.storage)
             implementation(libs.credentials)
             implementation(libs.credentials.play)
             implementation(libs.googleid)
             implementation(libs.play.services.auth.base)
+            implementation(libs.billing)
+            implementation(libs.coil.compose)
         }
     }
 }

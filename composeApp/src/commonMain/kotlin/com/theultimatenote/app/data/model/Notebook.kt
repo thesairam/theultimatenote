@@ -20,4 +20,5 @@ data class NotebookPage(
     val order: Int = 0,
     val createdAt: Long = 0L,
     val updatedAt: Long = 0L,
+    val imageUrls: List<String> = emptyList(),
 )

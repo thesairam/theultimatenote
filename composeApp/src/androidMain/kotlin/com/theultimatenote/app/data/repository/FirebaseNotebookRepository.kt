@@ -117,6 +117,7 @@ class FirebaseNotebookRepository : NotebookRepository {
             order = getLong("order")?.toInt() ?: 0,
             createdAt = getLong("createdAt") ?: 0L,
             updatedAt = getLong("updatedAt") ?: 0L,
+            imageUrls = (get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
         )
     }
 
@@ -136,5 +137,6 @@ class FirebaseNotebookRepository : NotebookRepository {
         "order" to order,
         "createdAt" to createdAt,
         "updatedAt" to updatedAt,
+        "imageUrls" to imageUrls,
     )
 }

@@ -161,6 +161,7 @@ fun KanbanBoardScreen(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             )
         } else {
+            val tasksByColumn = remember(tasks) { tasks.groupBy { it.columnId } }
             var containerRootPos by remember { mutableStateOf(Offset.Zero) }
             Box(
                 modifier = Modifier
@@ -176,7 +177,7 @@ fun KanbanBoardScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     items(columns, key = { it.id }) { column ->
-                        val columnTasks = tasks.filter { it.columnId == column.id }
+                        val columnTasks = tasksByColumn[column.id] ?: emptyList()
                         val isHovered = hoveredColumnId == column.id && draggedTask != null && draggedTask?.columnId != column.id
                         KanbanColumnCard(
                             column = column,
@@ -490,6 +491,16 @@ private fun TaskCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            if (task.checklist.isNotEmpty()) {
+                val checked = task.checklist.count { it.isChecked }
+                Text(
+                    text = "☑ $checked/${task.checklist.size}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (checked == task.checklist.size) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }

@@ -73,11 +73,13 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun DailyScreen() {
     val viewModel: DailyViewModel = koinViewModel()
+    val subscriptionViewModel: com.theultimatenote.app.ui.screens.subscription.SubscriptionViewModel = koinViewModel()
     val dailyTasks by viewModel.dailyTasks.collectAsState()
     val learningTasks by viewModel.learningTasks.collectAsState()
     val dailyProject by viewModel.dailyProject.collectAsState()
     val learningProject by viewModel.learningProject.collectAsState()
     val dailyBoard by viewModel.dailyBoard.collectAsState()
+    val dailyLimitReached by viewModel.limitReached.collectAsState()
 
     var showAddTask by remember { mutableStateOf(false) }
     var newTaskTitle by remember { mutableStateOf("") }
@@ -405,6 +407,14 @@ fun DailyScreen() {
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
             },
+        )
+    }
+
+    dailyLimitReached?.let { reason ->
+        com.theultimatenote.app.ui.components.UpgradeDialog(
+            reason = reason,
+            onUpgrade = { subscriptionViewModel.launchUpgradeFlow(); viewModel.dismissLimit() },
+            onDismiss = { viewModel.dismissLimit() },
         )
     }
 }

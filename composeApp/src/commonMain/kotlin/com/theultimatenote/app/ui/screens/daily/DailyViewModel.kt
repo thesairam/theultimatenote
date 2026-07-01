@@ -6,10 +6,15 @@ import com.theultimatenote.app.data.model.KanbanBoard
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
+import com.theultimatenote.app.data.model.SubscriptionLimits
+import com.theultimatenote.app.data.model.SubscriptionTier
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.NotificationScheduler
 import com.theultimatenote.app.data.repository.ProjectRepository
+import com.theultimatenote.app.data.repository.SubscriptionRepository
 import com.theultimatenote.app.data.repository.TaskRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,7 +34,12 @@ class DailyViewModel(
     private val taskRepository: TaskRepository,
     private val authRepository: AuthRepository,
     private val notificationScheduler: NotificationScheduler,
+    private val subscriptionRepository: SubscriptionRepository,
 ) : ViewModel() {
+
+    private val _limitReached = MutableStateFlow<String?>(null)
+    val limitReached = _limitReached.asStateFlow()
+    fun dismissLimit() { _limitReached.value = null }
 
     private val allProjects = authRepository.currentUser
         .flatMapLatest { user ->
@@ -86,6 +96,15 @@ class DailyViewModel(
         if (title.isBlank()) return
         val columnId = if (isRecurring) "recurring" else "temporary"
         viewModelScope.launch {
+            val user = authRepository.currentUser.first() ?: return@launch
+            val sub = subscriptionRepository.getSubscription(user.uid).first()
+            if (sub.subscriptionTier == SubscriptionTier.FREE) {
+                val totalActive = (dailyTasks.value + learningTasks.value).count { !it.isCompletedToday }
+                if (totalActive >= SubscriptionLimits.FREE_MAX_ACTIVE_TASKS) {
+                    _limitReached.value = "You've reached the free limit of ${SubscriptionLimits.FREE_MAX_ACTIVE_TASKS} active tasks. Upgrade to Pro for unlimited tasks."
+                    return@launch
+                }
+            }
             val taskId = taskRepository.createTask(
                 Task(
                     title = title.trim(),

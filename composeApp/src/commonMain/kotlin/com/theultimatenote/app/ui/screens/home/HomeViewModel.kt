@@ -6,12 +6,16 @@ import com.theultimatenote.app.data.model.PomodoroSession
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
+import com.theultimatenote.app.data.model.SubscriptionLimits
+import com.theultimatenote.app.data.model.SubscriptionTier
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.NotificationScheduler
 import com.theultimatenote.app.data.repository.PomodoroRepository
 import com.theultimatenote.app.data.repository.ProjectRepository
+import com.theultimatenote.app.data.repository.SubscriptionRepository
 import com.theultimatenote.app.data.repository.TaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -46,7 +50,12 @@ class HomeViewModel(
     private val taskRepository: TaskRepository,
     private val notificationScheduler: NotificationScheduler,
     private val pomodoroRepository: PomodoroRepository,
+    private val subscriptionRepository: SubscriptionRepository,
 ) : ViewModel() {
+
+    private val _limitReached = MutableStateFlow<String?>(null)
+
+    fun dismissLimit() { _limitReached.value = null }
 
     private val allProjects = authRepository.currentUser
         .flatMapLatest { user ->
@@ -77,15 +86,18 @@ class HomeViewModel(
     val projects: StateFlow<List<Project>> = allProjects
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val limitReached: StateFlow<String?> = _limitReached
+
     val uiState: StateFlow<HomeUiState> = combine(
         authRepository.currentUser,
         dailyTasks,
         learningTasks,
         regularProjectTasks,
     ) { user, daily, learning, projectTasks ->
-        val todayRelevantTasks = daily.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == Clock.System.todayIn(TimeZone.currentSystemDefault()).toString() } +
-            learning.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == Clock.System.todayIn(TimeZone.currentSystemDefault()).toString() } +
-            projectTasks.map { it.task }.filter { !it.isCompletedToday || it.completedDate == Clock.System.todayIn(TimeZone.currentSystemDefault()).toString() }
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+        val todayRelevantTasks = daily.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == today } +
+            learning.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == today } +
+            projectTasks.map { it.task }.filter { !it.isCompletedToday || it.completedDate == today }
         HomeUiState(
             userName = user?.displayName ?: "there",
             dailyTasks = daily.filter { !it.isCompletedToday },
@@ -169,6 +181,16 @@ class HomeViewModel(
     ) {
         if (title.isBlank() || projectId.isBlank()) return
         viewModelScope.launch {
+            val user = authRepository.currentUser.first() ?: return@launch
+            val sub = subscriptionRepository.getSubscription(user.uid).first()
+            if (sub.subscriptionTier == SubscriptionTier.FREE) {
+                val state = uiState.value
+                val allTasksCount = state.dailyTasks.size + state.learningTasks.size + state.projectTasks.size
+                if (allTasksCount >= SubscriptionLimits.FREE_MAX_ACTIVE_TASKS) {
+                    _limitReached.value = "You've reached the free limit of ${SubscriptionLimits.FREE_MAX_ACTIVE_TASKS} active tasks. Upgrade to Pro for unlimited tasks."
+                    return@launch
+                }
+            }
             val project = allProjects.first().find { it.id == projectId }
             val columnId = when (project?.type) {
                 ProjectType.DAILY -> if (isRecurring) "recurring" else "temporary"

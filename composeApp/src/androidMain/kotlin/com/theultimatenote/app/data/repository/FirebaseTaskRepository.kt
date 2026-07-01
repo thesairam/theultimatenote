@@ -2,6 +2,7 @@ package com.theultimatenote.app.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.snapshots
+import com.theultimatenote.app.data.model.ChecklistItem
 import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.data.model.TaskStatus
 import kotlinx.coroutines.flow.Flow
@@ -108,6 +109,15 @@ class FirebaseTaskRepository : TaskRepository {
             isImportant = getBoolean("isImportant") ?: false,
             calendarEventId = getString("calendarEventId"),
             calendarProvider = getString("calendarProvider"),
+            checklist = (get("checklist") as? List<*>)?.mapNotNull { item ->
+                val map = item as? Map<*, *> ?: return@mapNotNull null
+                ChecklistItem(
+                    id = map["id"] as? String ?: "",
+                    text = map["text"] as? String ?: "",
+                    isChecked = map["isChecked"] as? Boolean ?: false,
+                )
+            } ?: emptyList(),
+            imageUrls = (get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
         )
     }
 
@@ -129,5 +139,7 @@ class FirebaseTaskRepository : TaskRepository {
         "isImportant" to isImportant,
         "calendarEventId" to calendarEventId,
         "calendarProvider" to calendarProvider,
+        "checklist" to checklist.map { mapOf("id" to it.id, "text" to it.text, "isChecked" to it.isChecked) },
+        "imageUrls" to imageUrls,
     )
 }
