@@ -95,7 +95,7 @@ fun DailyScreen() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Daily Dashboard") },
+                title = { Text("Daily Habits & Tasks") },
                 actions = {
                     TextButton(onClick = { showMatrix = !showMatrix }) {
                         Icon(

@@ -81,7 +81,7 @@ class FirebaseProjectRepository : ProjectRepository {
             val dailyRef = projectsCol.document()
             val daily = Project(
                 id = dailyRef.id,
-                name = "Daily",
+                name = "Daily Habits & Tasks",
                 type = ProjectType.DAILY,
                 ownerId = userId,
                 createdAt = System.currentTimeMillis(),
@@ -102,7 +102,7 @@ class FirebaseProjectRepository : ProjectRepository {
             val learningRef = projectsCol.document()
             val learning = Project(
                 id = learningRef.id,
-                name = "Learning",
+                name = "Learning Project",
                 type = ProjectType.LEARNING,
                 ownerId = userId,
                 createdAt = System.currentTimeMillis(),

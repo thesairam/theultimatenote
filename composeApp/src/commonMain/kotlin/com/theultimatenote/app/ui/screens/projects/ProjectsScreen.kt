@@ -46,6 +46,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
@@ -156,20 +158,17 @@ private fun ProjectCard(
         ProjectType.LEARNING -> Icons.Default.School
         ProjectType.REGULAR -> Icons.Default.Folder
     }
-    val typeLabel = when (project.type) {
-        ProjectType.DAILY -> "Daily"
-        ProjectType.LEARNING -> "Learning"
-        ProjectType.REGULAR -> "Project"
-    }
+    val isSpecial = project.type == ProjectType.DAILY || project.type == ProjectType.LEARNING
+    val goldColor = Color(0xFFB8960C)
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = if (isSpecial) goldColor.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface,
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outline),
+        border = BorderStroke(0.75.dp, if (isSpecial) goldColor.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
@@ -178,7 +177,7 @@ private fun ProjectCard(
             Icon(
                 icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = if (isSpecial) goldColor else MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(36.dp),
             )
             Column(
@@ -190,11 +189,20 @@ private fun ProjectCard(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = typeLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (isSpecial) {
+                    Text(
+                        text = "✦ Special Project",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = goldColor,
+                    )
+                } else {
+                    Text(
+                        text = "Project",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             if (project.isDeletable) {
                 IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
