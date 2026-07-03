@@ -41,6 +41,13 @@ class FirebasePomodoroRepository : PomodoroRepository {
         return docRef.id
     }
 
+    override suspend fun clearAllSessions(userId: String) {
+        val sessions = sessionsCol(userId).get().await()
+        val batch = db.batch()
+        sessions.documents.forEach { batch.delete(it.reference) }
+        batch.commit().await()
+    }
+
     private fun com.google.firebase.firestore.DocumentSnapshot.toSession(): PomodoroSession? {
         if (!exists()) return null
         return PomodoroSession(

@@ -93,7 +93,7 @@ fun SignUpScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = "Join The Ultimate Note",
+                text = "Join Connecting Dots",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary,
             )

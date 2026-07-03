@@ -84,7 +84,7 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "The Ultimate Note",
+            text = "Connecting Dots",
             style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center,

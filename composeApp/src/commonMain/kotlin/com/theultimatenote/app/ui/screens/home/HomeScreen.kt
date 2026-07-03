@@ -97,7 +97,7 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "The Ultimate Note",
+                        "Connecting Dots",
                         color = MaterialTheme.colorScheme.tertiary,
                     )
                 },
@@ -162,7 +162,7 @@ fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Create tasks, habits, projects & notebooks — all in one place.",
+                        text = "Create tasks, habits, projects & notebooks - all dots connected.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     )

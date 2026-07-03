@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -22,7 +23,9 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.WorkHistory
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,12 +35,18 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,6 +62,7 @@ fun StatsScreen(
 ) {
     val viewModel: StatsViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsState()
+    var showResetConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -96,10 +106,42 @@ fun StatsScreen(
                     PomodoroStatsCard(uiState)
                     BreakdownCard(uiState)
                     AllTimeFocusCard(uiState)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = { showResetConfirm = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) {
+                        Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Reset Dashboard Stats")
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
+    }
+
+    if (showResetConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirm = false },
+            title = { Text("Reset Stats?") },
+            text = { Text("This will clear all focus session data. Your tasks and projects will not be affected.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.resetStats()
+                    showResetConfirm = false
+                }) {
+                    Text("Reset", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirm = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

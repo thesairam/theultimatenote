@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -103,4 +104,11 @@ class StatsViewModel(
             isLoading = false,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StatsUiState())
+
+    fun resetStats() {
+        viewModelScope.launch {
+            val userId = authRepository.currentUser.first()?.uid ?: return@launch
+            pomodoroRepository.clearAllSessions(userId)
+        }
+    }
 }

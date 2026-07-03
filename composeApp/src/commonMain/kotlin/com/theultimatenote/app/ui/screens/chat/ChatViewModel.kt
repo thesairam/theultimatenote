@@ -211,7 +211,7 @@ class ChatViewModel(
         val projects = projectRepository.getProjects(user.uid).first()
 
         val sb = StringBuilder()
-        sb.appendLine("You are the AI assistant for \"The Ultimate Note\" — a productivity app combining Kanban boards, journaling, daily planning, and learning tracking.")
+        sb.appendLine("You are the AI assistant for \"Connecting Dots\" — a productivity app combining Kanban boards, journaling, daily planning, and learning tracking.")
         sb.appendLine()
         sb.appendLine("The user's current projects and tasks:")
         sb.appendLine()

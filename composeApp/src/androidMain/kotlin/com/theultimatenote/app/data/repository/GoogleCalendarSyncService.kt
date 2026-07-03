@@ -103,7 +103,7 @@ class GoogleCalendarSyncService(private val context: Context) {
 
         return buildJsonObject {
             put("summary", task.title)
-            put("description", "Project: $projectName\nFrom: The Ultimate Note")
+            put("description", "Project: $projectName\nFrom: Connecting Dots")
             putJsonObject("start") {
                 put("dateTime", startDateTime)
                 put("timeZone", tz)
