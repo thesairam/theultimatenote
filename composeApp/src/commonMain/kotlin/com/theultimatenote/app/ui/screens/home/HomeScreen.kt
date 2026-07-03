@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PriorityHigh
@@ -65,9 +66,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.theultimatenote.app.data.model.ChecklistItem
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.CircularProgressIndicator
 import com.theultimatenote.app.ui.components.PomodoroTimerSheet
 import com.theultimatenote.app.ui.components.TaskEditDialog
 import org.koin.compose.viewmodel.koinViewModel
@@ -130,6 +134,16 @@ fun HomeScreen(
             }
         },
     ) { innerPadding ->
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+            return@Scaffold
+        }
+
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -252,8 +266,8 @@ fun HomeScreen(
     if (showQuickAdd) {
         QuickAddTaskDialog(
             projects = projects,
-            onAdd = { title, projectId, isRecurring, scheduledTime, isUrgent, isImportant ->
-                viewModel.quickAddTask(title, projectId, isRecurring, scheduledTime, isUrgent, isImportant)
+            onAdd = { title, projectId, isRecurring, scheduledTime, isUrgent, isImportant, description, checklist ->
+                viewModel.quickAddTask(title, projectId, isRecurring, scheduledTime, isUrgent, isImportant, description, checklist)
             },
             onDismiss = { showQuickAdd = false },
         )
@@ -288,10 +302,11 @@ fun HomeScreen(
 @Composable
 private fun QuickAddTaskDialog(
     projects: List<Project>,
-    onAdd: (String, String, Boolean, String?, Boolean, Boolean) -> Unit,
+    onAdd: (String, String, Boolean, String?, Boolean, Boolean, String, List<ChecklistItem>) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var taskTitle by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
     var selectedProject by remember { mutableStateOf(projects.firstOrNull()) }
     var expanded by remember { mutableStateOf(false) }
     var isRecurring by remember { mutableStateOf(false) }
@@ -299,6 +314,7 @@ private fun QuickAddTaskDialog(
     var scheduledTime by remember { mutableStateOf<String?>(null) }
     var isUrgent by remember { mutableStateOf(false) }
     var isImportant by remember { mutableStateOf(true) }
+    val checklistItems = remember { androidx.compose.runtime.mutableStateListOf<ChecklistItem>() }
     val timePickerState = rememberTimePickerState(initialHour = 8, initialMinute = 0, is24Hour = false)
 
     val isDailyProject = selectedProject?.type == ProjectType.DAILY
@@ -315,6 +331,63 @@ private fun QuickAddTaskDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description (optional)") },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Text(
+                    text = "Checklist",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                checklistItems.forEachIndexed { index, item ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Checkbox(
+                            checked = item.isChecked,
+                            onCheckedChange = { checked ->
+                                checklistItems[index] = item.copy(isChecked = checked)
+                            },
+                        )
+                        OutlinedTextField(
+                            value = item.text,
+                            onValueChange = { text ->
+                                checklistItems[index] = item.copy(text = text)
+                            },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodySmall,
+                        )
+                        IconButton(
+                            onClick = { checklistItems.removeAt(index) },
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+                TextButton(
+                    onClick = {
+                        checklistItems.add(
+                            ChecklistItem(
+                                id = kotlinx.datetime.Clock.System.now().toEpochMilliseconds().toString(),
+                                text = "",
+                                isChecked = false,
+                            )
+                        )
+                    },
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Add item")
+                }
 
                 ExposedDropdownMenuBox(
                     expanded = expanded,
@@ -430,7 +503,7 @@ private fun QuickAddTaskDialog(
             TextButton(
                 onClick = {
                     if (taskTitle.isNotBlank() && selectedProject != null) {
-                        onAdd(taskTitle.trim(), selectedProject!!.id, isRecurring, scheduledTime, isUrgent, isImportant)
+                        onAdd(taskTitle.trim(), selectedProject!!.id, isRecurring, scheduledTime, isUrgent, isImportant, description, checklistItems.toList())
                         onDismiss()
                     }
                 },

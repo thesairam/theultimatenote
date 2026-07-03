@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.theultimatenote.app.notifications.NotificationHelper
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -28,9 +29,13 @@ class MainActivity : ComponentActivity() {
 
         AndroidAppContext.init(this)
         NotificationHelper.createNotificationChannels(this)
-        NotificationHelper.scheduleMorningMotivation(this)
         requestNotificationPermission()
-        scheduleRecurringTaskReminders()
+
+        lifecycleScope.launch {
+            delay(2000)
+            NotificationHelper.scheduleMorningMotivation(this@MainActivity)
+            scheduleRecurringTaskReminders()
+        }
 
         setContent {
             App()

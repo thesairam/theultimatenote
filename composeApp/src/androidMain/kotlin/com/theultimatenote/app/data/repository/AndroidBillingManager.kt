@@ -37,8 +37,8 @@ class AndroidBillingManager(
         .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().enablePrepaidPlans().build())
         .build()
 
-    init {
-        connectBillingClient()
+    private fun ensureConnected() {
+        if (!billingClient.isReady) connectBillingClient()
     }
 
     private fun connectBillingClient() {
@@ -74,7 +74,10 @@ class AndroidBillingManager(
     }
 
     override fun querySubscriptionStatus() {
-        if (!billingClient.isReady) return
+        if (!billingClient.isReady) {
+            ensureConnected()
+            return
+        }
 
         val params = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.SUBS)
@@ -105,7 +108,7 @@ class AndroidBillingManager(
     override fun launchUpgradeFlow() {
         val activity = context as? Activity
         if (activity == null || !billingClient.isReady) {
-            if (!billingClient.isReady) connectBillingClient()
+            ensureConnected()
             return
         }
 

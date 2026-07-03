@@ -131,6 +131,16 @@ fun DailyScreen() {
             }
         },
     ) { innerPadding ->
+        if (state.isLoading) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.material3.CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+            return@Scaffold
+        }
+
         Crossfade(targetState = showMatrix, animationSpec = tween(120)) { isMatrix ->
         if (isMatrix) {
             val allDailyTasks = dailyTasks + learningTasks

@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class Notebook(
     val id: String = "",
     val name: String = "",
+    val description: String = "",
     val projectId: String? = null,
     val ownerId: String = "",
     val createdAt: Long = 0L,

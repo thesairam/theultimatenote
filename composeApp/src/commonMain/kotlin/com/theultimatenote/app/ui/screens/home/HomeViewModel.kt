@@ -2,6 +2,7 @@ package com.theultimatenote.app.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.theultimatenote.app.data.model.ChecklistItem
 import com.theultimatenote.app.data.model.PomodoroSession
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
@@ -35,6 +36,7 @@ data class TaskWithProject(
 )
 
 data class HomeUiState(
+    val isLoading: Boolean = true,
     val userName: String = "",
     val dailyTasks: List<Task> = emptyList(),
     val learningTasks: List<Task> = emptyList(),
@@ -99,6 +101,7 @@ class HomeViewModel(
             learning.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == today } +
             projectTasks.map { it.task }.filter { !it.isCompletedToday || it.completedDate == today }
         HomeUiState(
+            isLoading = false,
             userName = user?.displayName ?: "there",
             dailyTasks = daily.filter { !it.isCompletedToday },
             learningTasks = learning.filter { !it.isCompletedToday },
@@ -178,6 +181,8 @@ class HomeViewModel(
         scheduledTime: String? = null,
         isUrgent: Boolean = false,
         isImportant: Boolean = true,
+        description: String = "",
+        checklist: List<ChecklistItem> = emptyList(),
     ) {
         if (title.isBlank() || projectId.isBlank()) return
         viewModelScope.launch {
@@ -206,12 +211,14 @@ class HomeViewModel(
             val taskId = taskRepository.createTask(
                 Task(
                     title = title.trim(),
+                    description = description.trim(),
                     projectId = projectId,
                     columnId = columnId,
                     isRecurring = isRecurring,
                     scheduledTime = scheduledTime,
                     isUrgent = isUrgent,
                     isImportant = isImportant,
+                    checklist = checklist.filter { it.text.isNotBlank() },
                     createdAt = Clock.System.now().toEpochMilliseconds(),
                 )
             )

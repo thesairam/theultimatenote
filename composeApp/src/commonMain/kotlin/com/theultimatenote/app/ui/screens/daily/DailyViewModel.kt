@@ -30,6 +30,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
 data class DailyUiState(
+    val isLoading: Boolean = true,
     val dailyProject: Project? = null,
     val learningProject: Project? = null,
     val dailyBoard: KanbanBoard? = null,
@@ -84,6 +85,7 @@ class DailyViewModel(
         learningTasksFlow,
     ) { daily, learning, board, dailyTasks, learningTasks ->
         DailyUiState(
+            isLoading = false,
             dailyProject = daily,
             learningProject = learning,
             dailyBoard = board,

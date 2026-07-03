@@ -183,8 +183,9 @@ private fun NotebooksListView(viewModel: NotebooksViewModel) {
         CreateDialog(
             title = "New Notebook",
             label = "Notebook Name",
-            onConfirm = { name ->
-                viewModel.createNotebook(name)
+            showDescription = true,
+            onConfirm = { name, description ->
+                viewModel.createNotebook(name, description)
                 showCreateDialog = false
             },
             onDismiss = { showCreateDialog = false },
@@ -219,6 +220,16 @@ private fun NotebookCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (notebook.description.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = notebook.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 if (notebook.projectId != null) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -333,7 +344,7 @@ private fun PagesListView(
         CreateDialog(
             title = "New Page",
             label = "Page Title",
-            onConfirm = { title ->
+            onConfirm = { title, _ ->
                 viewModel.createPage(title)
                 showCreateDialog = false
             },
@@ -525,26 +536,39 @@ private fun PageEditorView(
 private fun CreateDialog(
     title: String,
     label: String,
-    onConfirm: (String) -> Unit,
+    showDescription: Boolean = false,
+    onConfirm: (String, String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text(label) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text(label) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (showDescription) {
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Description (optional)") },
+                        maxLines = 3,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
         },
         confirmButton = {
             TextButton(
-                onClick = { if (text.isNotBlank()) onConfirm(text.trim()) },
+                onClick = { if (text.isNotBlank()) onConfirm(text.trim(), description.trim()) },
                 enabled = text.isNotBlank(),
             ) {
                 Text("Create")

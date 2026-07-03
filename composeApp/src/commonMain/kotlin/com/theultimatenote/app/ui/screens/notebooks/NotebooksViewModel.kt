@@ -76,13 +76,14 @@ class NotebooksViewModel(
         _pages.value = emptyList()
     }
 
-    fun createNotebook(name: String) {
+    fun createNotebook(name: String, description: String = "") {
         viewModelScope.launch {
             val user = authRepository.currentUser.stateIn(viewModelScope).value ?: return@launch
             try {
                 notebookRepository.createNotebook(
                     Notebook(
                         name = name,
+                        description = description,
                         ownerId = user.uid,
                         createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                     )

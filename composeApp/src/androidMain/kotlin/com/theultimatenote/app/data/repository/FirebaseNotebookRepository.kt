@@ -101,6 +101,7 @@ class FirebaseNotebookRepository : NotebookRepository {
         return Notebook(
             id = id,
             name = getString("name") ?: "",
+            description = getString("description") ?: "",
             projectId = getString("projectId"),
             ownerId = getString("ownerId") ?: "",
             createdAt = getLong("createdAt") ?: 0L,
@@ -124,6 +125,7 @@ class FirebaseNotebookRepository : NotebookRepository {
     private fun Notebook.toMap() = mapOf(
         "id" to id,
         "name" to name,
+        "description" to description,
         "projectId" to projectId,
         "ownerId" to ownerId,
         "createdAt" to createdAt,
