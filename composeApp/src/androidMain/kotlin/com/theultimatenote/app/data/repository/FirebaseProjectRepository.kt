@@ -77,6 +77,26 @@ class FirebaseProjectRepository : ProjectRepository {
             .whereEqualTo("type", ProjectType.DAILY.name)
             .get().await()
 
+        if (!existing.isEmpty) {
+            existing.documents.forEach { doc ->
+                val name = doc.getString("name")
+                if (name == "Daily") {
+                    doc.reference.update("name", "Daily Habits & Tasks").await()
+                }
+            }
+            val learningDocs = projectsCol
+                .whereEqualTo("ownerId", userId)
+                .whereEqualTo("type", ProjectType.LEARNING.name)
+                .get().await()
+            learningDocs.documents.forEach { doc ->
+                val name = doc.getString("name")
+                if (name == "Learning") {
+                    doc.reference.update("name", "Learning Project").await()
+                }
+            }
+            return
+        }
+
         if (existing.isEmpty) {
             val dailyRef = projectsCol.document()
             val daily = Project(
