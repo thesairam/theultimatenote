@@ -1,7 +1,12 @@
 package com.theultimatenote.app.ui.screens.projects
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +24,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.AlertDialog
@@ -28,6 +36,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
@@ -66,10 +76,14 @@ fun ProjectsScreen(
     val isCreating by viewModel.isCreating.collectAsState()
     val limitReached by viewModel.limitReached.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
+    var showCompletedSection by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.ensureDefaultProjects()
     }
+
+    val activeProjects = projects.filter { !it.isCompleted }
+    val completedProjects = projects.filter { it.isCompleted }
 
     Scaffold(
         topBar = {
@@ -92,8 +106,8 @@ fun ProjectsScreen(
             }
         },
     ) { innerPadding ->
-        Crossfade(targetState = projects.isEmpty() && !isCreating, animationSpec = tween(120)) { isEmpty ->
-            if (isEmpty) {
+        Crossfade(targetState = activeProjects.isEmpty() && !isCreating, animationSpec = tween(120)) { isEmpty ->
+            if (isEmpty && completedProjects.isEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(innerPadding).padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -116,12 +130,63 @@ fun ProjectsScreen(
                     modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(projects, key = { it.id }) { project ->
+                    items(activeProjects, key = { it.id }) { project ->
                         ProjectCard(
                             project = project,
                             onClick = { onNavigateToBoard(project.id, project.name, project.type.name) },
+                            onComplete = { viewModel.completeProject(project) },
                             onDelete = { viewModel.deleteProject(project) },
                         )
+                    }
+
+                    if (completedProjects.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            HorizontalDivider(
+                                thickness = 0.75.dp,
+                                color = MaterialTheme.colorScheme.outline,
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showCompletedSection = !showCompletedSection }
+                                    .padding(vertical = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.tertiary,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                    Text(
+                                        text = "Completed (${completedProjects.size})",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Icon(
+                                    if (showCompletedSection) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+
+                        if (showCompletedSection) {
+                            items(completedProjects, key = { it.id }) { project ->
+                                CompletedProjectCard(
+                                    project = project,
+                                    onClick = { onNavigateToBoard(project.id, project.name, project.type.name) },
+                                    onDelete = { viewModel.deleteProject(project) },
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -151,6 +216,7 @@ fun ProjectsScreen(
 private fun ProjectCard(
     project: Project,
     onClick: () -> Unit,
+    onComplete: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val icon = when (project.type) {
@@ -160,6 +226,8 @@ private fun ProjectCard(
     }
     val isSpecial = project.type == ProjectType.DAILY || project.type == ProjectType.LEARNING
     val goldColor = Color(0xFFB8960C)
+    var showCompleteConfirm by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
@@ -204,8 +272,18 @@ private fun ProjectCard(
                     )
                 }
             }
+            if (project.type == ProjectType.REGULAR) {
+                IconButton(onClick = { showCompleteConfirm = true }, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = "Complete",
+                        tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
             if (project.isDeletable) {
-                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                IconButton(onClick = { showDeleteConfirm = true }, modifier = Modifier.size(36.dp)) {
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "Delete",
@@ -215,6 +293,109 @@ private fun ProjectCard(
                 }
             }
         }
+    }
+
+    if (showCompleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showCompleteConfirm = false },
+            title = { Text("Complete Project") },
+            text = { Text("Mark \"${project.name}\" as completed? It will move to the completed section. You can still view it.") },
+            confirmButton = {
+                TextButton(onClick = { onComplete(); showCompleteConfirm = false }) {
+                    Text("Complete", color = MaterialTheme.colorScheme.tertiary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCompleteConfirm = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete Project") },
+            text = { Text("Delete \"${project.name}\" and all its tasks and notebooks? This cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = { onDelete(); showDeleteConfirm = false }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun CompletedProjectCard(
+    project: Project,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(28.dp),
+            )
+            Column(
+                modifier = Modifier.weight(1f).padding(start = 16.dp),
+            ) {
+                Text(
+                    text = project.name,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        textDecoration = TextDecoration.LineThrough,
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "Completed",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
+            IconButton(onClick = { showDeleteConfirm = true }, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete Project") },
+            text = { Text("Delete \"${project.name}\" permanently? This cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = { onDelete(); showDeleteConfirm = false }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

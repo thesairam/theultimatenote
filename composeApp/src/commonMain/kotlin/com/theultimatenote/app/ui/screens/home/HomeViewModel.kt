@@ -30,17 +30,17 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
-data class TaskWithProject(
-    val task: Task,
-    val projectName: String,
+data class ProjectSummary(
+    val project: Project,
+    val totalTasks: Int,
+    val completedTasks: Int,
+    val activeTasks: Int,
 )
 
 data class HomeUiState(
     val isLoading: Boolean = true,
     val userName: String = "",
-    val dailyTasks: List<Task> = emptyList(),
-    val learningTasks: List<Task> = emptyList(),
-    val projectTasks: List<TaskWithProject> = emptyList(),
+    val projectSummaries: List<ProjectSummary> = emptyList(),
     val completedCount: Int = 0,
     val totalCount: Int = 0,
 )
@@ -64,50 +64,50 @@ class HomeViewModel(
             if (user != null) projectRepository.getProjects(user.uid) else flowOf(emptyList())
         }
 
-    private val dailyProject = allProjects.map { it.find { p -> p.type == ProjectType.DAILY } }
-    private val learningProject = allProjects.map { it.find { p -> p.type == ProjectType.LEARNING } }
-    private val regularProjects = allProjects.map { it.filter { p -> p.type == ProjectType.REGULAR } }
-
-    private val dailyTasks = dailyProject.flatMapLatest { project ->
-        if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
-    }
-
-    private val learningTasks = learningProject.flatMapLatest { project ->
-        if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
-    }
-
-    private val regularProjectTasks = regularProjects.flatMapLatest { projects ->
+    private val allProjectsWithTasks = allProjects.flatMapLatest { projects ->
         if (projects.isEmpty()) flowOf(emptyList())
         else combine(projects.map { project ->
             taskRepository.getTasksForProject(project.id).map { tasks ->
-                tasks.map { TaskWithProject(it, project.name) }
+                project to tasks
             }
-        }) { arrays -> arrays.flatMap { it.toList() } }
+        }) { it.toList() }
     }
 
     val projects: StateFlow<List<Project>> = allProjects
+        .map { it.filter { p -> !p.isCompleted } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val limitReached: StateFlow<String?> = _limitReached
 
     val uiState: StateFlow<HomeUiState> = combine(
         authRepository.currentUser,
-        dailyTasks,
-        learningTasks,
-        regularProjectTasks,
-    ) { user, daily, learning, projectTasks ->
+        allProjectsWithTasks,
+    ) { user, projectsWithTasks ->
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
-        val todayRelevantTasks = daily.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == today } +
-            learning.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == today } +
-            projectTasks.map { it.task }.filter { !it.isCompletedToday || it.completedDate == today }
+
+        val summaries = projectsWithTasks
+            .filter { (project, _) -> !project.isCompleted }
+            .map { (project, tasks) ->
+                val todayRelevant = tasks.filter {
+                    it.isRecurring || !it.isCompletedToday || it.completedDate == today
+                }
+                ProjectSummary(
+                    project = project,
+                    totalTasks = todayRelevant.size,
+                    completedTasks = todayRelevant.count { it.isCompletedToday },
+                    activeTasks = todayRelevant.count { !it.isCompletedToday },
+                )
+            }
+
+        val totalCompleted = summaries.sumOf { it.completedTasks }
+        val totalAll = summaries.sumOf { it.totalTasks }
+
         HomeUiState(
             isLoading = false,
             userName = user?.displayName ?: "there",
-            dailyTasks = daily.filter { !it.isCompletedToday },
-            learningTasks = learning.filter { !it.isCompletedToday },
-            projectTasks = projectTasks.filter { !it.task.isCompletedToday },
-            completedCount = todayRelevantTasks.count { it.isCompletedToday },
-            totalCount = todayRelevantTasks.size,
+            projectSummaries = summaries,
+            completedCount = totalCompleted,
+            totalCount = totalAll,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState())
 
@@ -121,39 +121,6 @@ class HomeViewModel(
             projects.filter { it.type == ProjectType.DAILY || it.type == ProjectType.LEARNING }.forEach { project ->
                 taskRepository.resetRecurringTasks(project.id)
             }
-        }
-    }
-
-    fun toggleTaskComplete(task: Task) {
-        viewModelScope.launch {
-            val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
-            val newCompleted = !task.isCompletedToday
-            taskRepository.updateTask(
-                task.copy(
-                    isCompletedToday = newCompleted,
-                    completedDate = if (newCompleted) today else null,
-                )
-            )
-        }
-    }
-
-    fun updateTask(task: Task) {
-        viewModelScope.launch {
-            taskRepository.updateTask(task)
-            if (task.isRecurring && task.scheduledTime != null) {
-                scheduleNotification(task.id, task.title, task.scheduledTime)
-            } else {
-                notificationScheduler.cancelTaskReminder(task.id)
-            }
-        }
-    }
-
-    private fun scheduleNotification(taskId: String, title: String, time: String) {
-        val parts = time.split(":")
-        if (parts.size == 2) {
-            val hour = parts[0].toIntOrNull() ?: return
-            val minute = parts[1].toIntOrNull() ?: return
-            notificationScheduler.scheduleTaskReminder(taskId, title, hour, minute)
         }
     }
 
@@ -176,6 +143,15 @@ class HomeViewModel(
         }
     }
 
+    private fun scheduleNotification(taskId: String, title: String, time: String) {
+        val parts = time.split(":")
+        if (parts.size == 2) {
+            val hour = parts[0].toIntOrNull() ?: return
+            val minute = parts[1].toIntOrNull() ?: return
+            notificationScheduler.scheduleTaskReminder(taskId, title, hour, minute)
+        }
+    }
+
     fun quickAddTask(
         title: String,
         projectId: String,
@@ -191,9 +167,8 @@ class HomeViewModel(
             val user = authRepository.currentUser.first() ?: return@launch
             val sub = subscriptionRepository.getSubscription(user.uid).first()
             if (sub.subscriptionTier == SubscriptionTier.FREE) {
-                val state = uiState.value
-                val allTasksCount = state.dailyTasks.size + state.learningTasks.size + state.projectTasks.size
-                if (allTasksCount >= SubscriptionLimits.FREE_MAX_ACTIVE_TASKS) {
+                val totalActive = uiState.value.projectSummaries.sumOf { it.activeTasks }
+                if (totalActive >= SubscriptionLimits.FREE_MAX_ACTIVE_TASKS) {
                     _limitReached.value = "You've reached the free limit of ${SubscriptionLimits.FREE_MAX_ACTIVE_TASKS} active tasks. Upgrade to Pro for unlimited tasks."
                     return@launch
                 }

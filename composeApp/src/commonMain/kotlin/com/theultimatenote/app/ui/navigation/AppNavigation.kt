@@ -198,6 +198,9 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
                     onNavigateToProfile = { navController.navigate(ProfileRoute) },
                     onNavigateToChat = { navController.navigate(ChatRoute) },
                     onNavigateToStats = { navController.navigate(StatsRoute) },
+                    onNavigateToBoard = { projectId, projectName, projectType ->
+                        navController.navigate(KanbanBoardRoute(projectId, projectName, projectType))
+                    },
                 )
             }
             composable<ProjectsRoute> {

@@ -1,7 +1,6 @@
 package com.theultimatenote.app.ui.screens.home
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -28,10 +27,12 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,9 +44,9 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -64,15 +65,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.ChecklistItem
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
-import com.theultimatenote.app.data.model.Task
-import com.theultimatenote.app.ui.components.PomodoroTimerSheet
-import com.theultimatenote.app.ui.components.TaskEditDialog
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,6 +79,7 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToChat: () -> Unit = {},
     onNavigateToStats: () -> Unit = {},
+    onNavigateToBoard: (projectId: String, projectName: String, projectType: String) -> Unit = { _, _, _ -> },
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val subscriptionViewModel: com.theultimatenote.app.ui.screens.subscription.SubscriptionViewModel = koinViewModel()
@@ -88,7 +87,8 @@ fun HomeScreen(
     val projects by viewModel.projects.collectAsState()
     val limitReached by viewModel.limitReached.collectAsState()
     var showQuickAdd by remember { mutableStateOf(false) }
-    var pomodoroTask by remember { mutableStateOf<Task?>(null) }
+
+    val goldColor = Color(0xFFB8960C)
 
     Scaffold(
         topBar = {
@@ -194,68 +194,63 @@ fun HomeScreen(
                 }
             }
 
-            if (uiState.dailyTasks.isNotEmpty()) {
+            val specialProjects = uiState.projectSummaries.filter {
+                it.project.type == ProjectType.DAILY || it.project.type == ProjectType.LEARNING
+            }
+            val regularProjects = uiState.projectSummaries.filter {
+                it.project.type == ProjectType.REGULAR
+            }
+
+            if (specialProjects.isNotEmpty()) {
                 item {
                     Spacer(modifier = Modifier.height(4.dp))
-                    SectionHeader("Today's Tasks")
                 }
-                items(uiState.dailyTasks, key = { "home-daily-${it.id}" }) { task ->
-                    HomeTaskItem(
-                        task = task,
-                        isDailyProject = true,
-                        onToggle = { viewModel.toggleTaskComplete(task) },
-                        onEdit = { viewModel.updateTask(it) },
-                        onStartPomodoro = { pomodoroTask = task },
+                items(specialProjects, key = { "home-${it.project.id}" }) { summary ->
+                    ProjectSummaryCard(
+                        summary = summary,
+                        isSpecial = true,
+                        goldColor = goldColor,
+                        onClick = {
+                            onNavigateToBoard(summary.project.id, summary.project.name, summary.project.type.name)
+                        },
                     )
                 }
             }
 
-            if (uiState.learningTasks.isNotEmpty()) {
+            if (regularProjects.isNotEmpty()) {
                 item {
                     Spacer(modifier = Modifier.height(4.dp))
-                    SectionHeader("Learning")
+                    Text(
+                        text = "Projects",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                 }
-                items(uiState.learningTasks, key = { "home-learn-${it.id}" }) { task ->
-                    HomeTaskItem(
-                        task = task,
-                        onToggle = { viewModel.toggleTaskComplete(task) },
-                        onEdit = { viewModel.updateTask(it) },
-                        onStartPomodoro = { pomodoroTask = task },
+                items(regularProjects, key = { "home-${it.project.id}" }) { summary ->
+                    ProjectSummaryCard(
+                        summary = summary,
+                        isSpecial = false,
+                        goldColor = goldColor,
+                        onClick = {
+                            onNavigateToBoard(summary.project.id, summary.project.name, summary.project.type.name)
+                        },
                     )
                 }
             }
 
-            if (uiState.projectTasks.isNotEmpty()) {
-                item {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    SectionHeader("Project Tasks")
-                }
-                items(uiState.projectTasks, key = { "home-proj-${it.task.id}" }) { taskWithProject ->
-                    HomeTaskItem(
-                        task = taskWithProject.task,
-                        projectName = taskWithProject.projectName,
-                        onToggle = { viewModel.toggleTaskComplete(taskWithProject.task) },
-                        onEdit = { viewModel.updateTask(it) },
-                        onStartPomodoro = { pomodoroTask = taskWithProject.task },
-                    )
-                }
-            }
-
-            if (uiState.dailyTasks.isEmpty() && uiState.learningTasks.isEmpty()
-                && uiState.projectTasks.isEmpty() && uiState.totalCount == 0
-            ) {
+            if (uiState.projectSummaries.isEmpty()) {
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            text = "No tasks for today",
+                            text = "No projects yet",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = "Tap + to add a task",
+                            text = "Tap + to add a task or create a project",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp),
@@ -276,28 +271,111 @@ fun HomeScreen(
         )
     }
 
-    pomodoroTask?.let { task ->
-        PomodoroTimerSheet(
-            taskTitle = task.title,
-            onComplete = { minutes ->
-                viewModel.savePomodoroSession(task, minutes)
-            },
-            onCancel = { elapsedMinutes ->
-                if (elapsedMinutes > 0) {
-                    viewModel.savePomodoroSession(task, elapsedMinutes)
-                }
-                pomodoroTask = null
-            },
-            onDismiss = { pomodoroTask = null },
-        )
-    }
-
     limitReached?.let { reason ->
         com.theultimatenote.app.ui.components.UpgradeDialog(
             reason = reason,
             onUpgrade = { subscriptionViewModel.launchUpgradeFlow(); viewModel.dismissLimit() },
             onDismiss = { viewModel.dismissLimit() },
         )
+    }
+}
+
+@Composable
+private fun ProjectSummaryCard(
+    summary: ProjectSummary,
+    isSpecial: Boolean,
+    goldColor: Color,
+    onClick: () -> Unit,
+) {
+    val icon = when (summary.project.type) {
+        ProjectType.DAILY -> Icons.Default.CalendarToday
+        ProjectType.LEARNING -> Icons.Default.School
+        ProjectType.REGULAR -> Icons.Default.Folder
+    }
+
+    val progress = if (summary.totalTasks > 0) {
+        summary.completedTasks.toFloat() / summary.totalTasks
+    } else 0f
+
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSpecial) goldColor.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.75.dp, if (isSpecial) goldColor.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = if (isSpecial) goldColor else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp),
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = summary.project.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (isSpecial) {
+                        Text(
+                            text = "✦ Special Project",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = goldColor,
+                        )
+                    }
+                }
+                Text(
+                    text = "Open →",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isSpecial) goldColor else MaterialTheme.colorScheme.tertiary,
+                )
+            }
+
+            if (summary.totalTasks > 0) {
+                Spacer(modifier = Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(6.dp),
+                    color = if (isSpecial) goldColor else MaterialTheme.colorScheme.tertiary,
+                    trackColor = if (isSpecial) goldColor.copy(alpha = 0.15f)
+                        else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = "${summary.completedTasks}/${summary.totalTasks} done today",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (summary.activeTasks > 0) {
+                        Text(
+                            text = "${summary.activeTasks} remaining",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "No tasks yet",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 
@@ -540,125 +618,6 @@ private fun QuickAddTaskDialog(
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
             },
-        )
-    }
-}
-
-@Composable
-private fun SectionHeader(title: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        HorizontalDivider(
-            modifier = Modifier.weight(1f),
-            thickness = 0.75.dp,
-            color = MaterialTheme.colorScheme.outline,
-        )
-    }
-}
-
-@Composable
-private fun HomeTaskItem(
-    task: Task,
-    projectName: String? = null,
-    isDailyProject: Boolean = false,
-    onToggle: () -> Unit,
-    onEdit: (Task) -> Unit = {},
-    onStartPomodoro: () -> Unit = {},
-) {
-    var showEditDialog by remember { mutableStateOf(false) }
-
-    val titleColor by animateColorAsState(
-        targetValue = if (task.isCompletedToday) MaterialTheme.colorScheme.onSurfaceVariant
-            else MaterialTheme.colorScheme.onSurface,
-        animationSpec = tween(120),
-    )
-
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { showEditDialog = true },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outline),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(
-                checked = task.isCompletedToday,
-                onCheckedChange = { onToggle() },
-                modifier = Modifier.size(24.dp),
-            )
-            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        textDecoration = if (task.isCompletedToday) TextDecoration.LineThrough else TextDecoration.None,
-                    ),
-                    color = titleColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (task.isRecurring || projectName != null || task.scheduledTime != null) {
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (task.isRecurring) {
-                            Text(
-                                text = "↻ Recurring",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.tertiary,
-                            )
-                        }
-                        if (projectName != null) {
-                            Text(
-                                text = projectName,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary,
-                            )
-                        }
-                        if (task.scheduledTime != null) {
-                            Text(
-                                text = "⏰ ${task.scheduledTime}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-            }
-            AnimatedVisibility(
-                visible = !task.isCompletedToday,
-                enter = fadeIn(tween(100)),
-                exit = fadeOut(tween(150)),
-            ) {
-                IconButton(
-                    onClick = onStartPomodoro,
-                    modifier = Modifier.size(40.dp),
-                ) {
-                    Icon(
-                        Icons.Default.PlayArrow,
-                        contentDescription = "Start Focus",
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
-            }
-        }
-    }
-
-    if (showEditDialog) {
-        TaskEditDialog(
-            task = task,
-            showRecurringToggle = isDailyProject,
-            onSave = { updated -> onEdit(updated) },
-            onDismiss = { showEditDialog = false },
         )
     }
 }

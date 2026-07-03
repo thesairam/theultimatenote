@@ -2,7 +2,7 @@ package com.theultimatenote.app.ui.screens.stats
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.theultimatenote.app.data.model.PomodoroSession
+import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.data.repository.AuthRepository
@@ -24,6 +24,14 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
+data class ProjectStats(
+    val projectName: String,
+    val projectType: ProjectType,
+    val totalTasks: Int,
+    val completedTasks: Int,
+    val isCompleted: Boolean,
+)
+
 data class StatsUiState(
     val totalTasksToday: Int = 0,
     val completedToday: Int = 0,
@@ -35,6 +43,9 @@ data class StatsUiState(
     val dailyTasksCompleted: Int = 0,
     val learningTasksCompleted: Int = 0,
     val projectTasksCompleted: Int = 0,
+    val activeProjectCount: Int = 0,
+    val completedProjectCount: Int = 0,
+    val projectStats: List<ProjectStats> = emptyList(),
     val isLoading: Boolean = true,
 )
 
@@ -55,10 +66,10 @@ class StatsViewModel(
         }
 
     private val allTasksByProject = allProjects.flatMapLatest { projects ->
-        if (projects.isEmpty()) flowOf(emptyList<Pair<ProjectType, List<Task>>>())
+        if (projects.isEmpty()) flowOf(emptyList<Triple<Project, ProjectType, List<Task>>>())
         else combine(projects.map { project ->
             taskRepository.getTasksForProject(project.id).map { tasks ->
-                project.type to tasks
+                Triple(project, project.type, tasks)
             }
         }) { it.toList() }
     }
@@ -80,16 +91,27 @@ class StatsViewModel(
         todaysSessions,
         allSessions,
     ) { tasksByProject, todaySessions, allPomSessions ->
-        val allTasks = tasksByProject.flatMap { it.second }
-        val dailyTasks = tasksByProject.filter { it.first == ProjectType.DAILY }.flatMap { it.second }
-        val learningTasks = tasksByProject.filter { it.first == ProjectType.LEARNING }.flatMap { it.second }
-        val projectTasks = tasksByProject.filter { it.first == ProjectType.REGULAR }.flatMap { it.second }
+        val allTasks = tasksByProject.flatMap { it.third }
+        val dailyTasks = tasksByProject.filter { it.second == ProjectType.DAILY }.flatMap { it.third }
+        val learningTasks = tasksByProject.filter { it.second == ProjectType.LEARNING }.flatMap { it.third }
+        val projectTasks = tasksByProject.filter { it.second == ProjectType.REGULAR }.flatMap { it.third }
 
         val completedSessions = todaySessions.filter { it.completed }
         val allCompletedSessions = allPomSessions.filter { it.completed }
 
         val todayStr = today
         val todayRelevant = allTasks.filter { it.isRecurring || !it.isCompletedToday || it.completedDate == todayStr }
+
+        val perProjectStats = tasksByProject.map { (project, _, tasks) ->
+            ProjectStats(
+                projectName = project.name,
+                projectType = project.type,
+                totalTasks = tasks.size,
+                completedTasks = tasks.count { it.isCompletedToday },
+                isCompleted = project.isCompleted,
+            )
+        }
+
         StatsUiState(
             totalTasksToday = todayRelevant.size,
             completedToday = todayRelevant.count { it.isCompletedToday },
@@ -101,6 +123,9 @@ class StatsViewModel(
             dailyTasksCompleted = dailyTasks.count { it.isCompletedToday },
             learningTasksCompleted = learningTasks.count { it.isCompletedToday },
             projectTasksCompleted = projectTasks.count { it.isCompletedToday },
+            activeProjectCount = tasksByProject.count { !it.first.isCompleted },
+            completedProjectCount = tasksByProject.count { it.first.isCompleted },
+            projectStats = perProjectStats,
             isLoading = false,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StatsUiState())

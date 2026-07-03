@@ -76,6 +76,13 @@ class ProjectsViewModel(
         }
     }
 
+    fun completeProject(project: Project) {
+        if (project.type != ProjectType.REGULAR) return
+        viewModelScope.launch {
+            projectRepository.completeProject(project.id)
+        }
+    }
+
     fun deleteProject(project: Project) {
         if (!project.isDeletable) return
         viewModelScope.launch {

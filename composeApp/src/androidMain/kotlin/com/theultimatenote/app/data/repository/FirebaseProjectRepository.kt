@@ -50,6 +50,15 @@ class FirebaseProjectRepository : ProjectRepository {
         return docRef.id
     }
 
+    override suspend fun completeProject(projectId: String) {
+        projectsCol.document(projectId).update(
+            mapOf(
+                "isCompleted" to true,
+                "completedAt" to System.currentTimeMillis(),
+            )
+        ).await()
+    }
+
     override suspend fun deleteProject(projectId: String) {
         val tasksSnapshot = projectsCol.document(projectId).collection("tasks").get().await()
         for (taskDoc in tasksSnapshot.documents) {
@@ -192,6 +201,8 @@ class FirebaseProjectRepository : ProjectRepository {
             notebookId = getString("notebookId") ?: "",
             createdAt = getLong("createdAt") ?: 0L,
             isDeletable = getBoolean("isDeletable") ?: true,
+            isCompleted = getBoolean("isCompleted") ?: false,
+            completedAt = getLong("completedAt") ?: 0L,
         )
     }
 
@@ -203,6 +214,8 @@ class FirebaseProjectRepository : ProjectRepository {
         "notebookId" to notebookId,
         "createdAt" to createdAt,
         "isDeletable" to isDeletable,
+        "isCompleted" to isCompleted,
+        "completedAt" to completedAt,
     )
 
     private fun KanbanBoard.toMap() = mapOf(

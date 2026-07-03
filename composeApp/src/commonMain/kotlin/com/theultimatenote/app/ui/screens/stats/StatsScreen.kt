@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.WorkHistory
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -53,6 +55,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.theultimatenote.app.data.model.ProjectType
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,8 +106,12 @@ fun StatsScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     TodayProgressCard(uiState)
+                    ProjectOverviewCard(uiState)
                     PomodoroStatsCard(uiState)
                     BreakdownCard(uiState)
+                    if (uiState.projectStats.isNotEmpty()) {
+                        PerProjectStatsCard(uiState)
+                    }
                     AllTimeFocusCard(uiState)
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -336,6 +343,126 @@ private fun AllTimeFocusCard(uiState: StatsUiState) {
                     icon = Icons.Default.Timer,
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProjectOverviewCard(uiState: StatsUiState) {
+    val goldColor = Color(0xFFB8960C)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Default.Folder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = "Projects",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                StatNumber(
+                    value = "${uiState.activeProjectCount}",
+                    label = "Active",
+                    icon = Icons.Default.Folder,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                StatNumber(
+                    value = "${uiState.completedProjectCount}",
+                    label = "Completed",
+                    icon = Icons.Default.CheckCircle,
+                    color = goldColor,
+                )
+                StatNumber(
+                    value = "${uiState.totalTasksAllTime}",
+                    label = "Total Tasks",
+                    icon = Icons.Default.WorkHistory,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PerProjectStatsCard(uiState: StatsUiState) {
+    val goldColor = Color(0xFFB8960C)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                text = "Per Project",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            uiState.projectStats.forEach { stats ->
+                val icon = when (stats.projectType) {
+                    ProjectType.DAILY -> Icons.Default.CalendarToday
+                    ProjectType.LEARNING -> Icons.Default.School
+                    ProjectType.REGULAR -> if (stats.isCompleted) Icons.Default.CheckCircle else Icons.Default.Folder
+                }
+                val accentColor = when {
+                    stats.isCompleted -> goldColor
+                    stats.projectType == ProjectType.DAILY || stats.projectType == ProjectType.LEARNING -> goldColor
+                    else -> MaterialTheme.colorScheme.primary
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stats.projectName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = if (stats.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        )
+                        if (stats.totalTasks > 0) {
+                            LinearProgressIndicator(
+                                progress = { stats.completedTasks.toFloat() / stats.totalTasks },
+                                modifier = Modifier.fillMaxWidth().height(4.dp).padding(top = 2.dp),
+                                color = accentColor,
+                                trackColor = accentColor.copy(alpha = 0.15f),
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "${stats.completedTasks}/${stats.totalTasks}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = accentColor,
+                    )
+                }
             }
         }
     }
