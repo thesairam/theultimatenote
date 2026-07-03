@@ -97,50 +97,48 @@ class FirebaseProjectRepository : ProjectRepository {
             return
         }
 
-        if (existing.isEmpty) {
-            val dailyRef = projectsCol.document()
-            val daily = Project(
-                id = dailyRef.id,
-                name = "Daily Habits & Tasks",
-                type = ProjectType.DAILY,
-                ownerId = userId,
-                createdAt = System.currentTimeMillis(),
-                isDeletable = false,
-            )
-            dailyRef.set(daily.toMap()).await()
+        val dailyRef = projectsCol.document()
+        val daily = Project(
+            id = dailyRef.id,
+            name = "Daily Habits & Tasks",
+            type = ProjectType.DAILY,
+            ownerId = userId,
+            createdAt = System.currentTimeMillis(),
+            isDeletable = false,
+        )
+        dailyRef.set(daily.toMap()).await()
 
-            val dailyBoard = KanbanBoard(
-                id = dailyRef.id,
-                projectId = dailyRef.id,
-                columns = listOf(
-                    KanbanColumn(id = "recurring", name = "Recurring", order = 0),
-                    KanbanColumn(id = "temporary", name = "Temporary", order = 1),
-                ),
-            )
-            boardsCol.document(dailyRef.id).set(dailyBoard.toMap()).await()
+        val dailyBoard = KanbanBoard(
+            id = dailyRef.id,
+            projectId = dailyRef.id,
+            columns = listOf(
+                KanbanColumn(id = "recurring", name = "Recurring", order = 0),
+                KanbanColumn(id = "temporary", name = "Temporary", order = 1),
+            ),
+        )
+        boardsCol.document(dailyRef.id).set(dailyBoard.toMap()).await()
 
-            val learningRef = projectsCol.document()
-            val learning = Project(
-                id = learningRef.id,
-                name = "Learning Project",
-                type = ProjectType.LEARNING,
-                ownerId = userId,
-                createdAt = System.currentTimeMillis(),
-                isDeletable = false,
-            )
-            learningRef.set(learning.toMap()).await()
+        val learningRef = projectsCol.document()
+        val learning = Project(
+            id = learningRef.id,
+            name = "Learning Project",
+            type = ProjectType.LEARNING,
+            ownerId = userId,
+            createdAt = System.currentTimeMillis(),
+            isDeletable = false,
+        )
+        learningRef.set(learning.toMap()).await()
 
-            val learningBoard = KanbanBoard(
-                id = learningRef.id,
-                projectId = learningRef.id,
-                columns = listOf(
-                    KanbanColumn(id = "path_1", name = "Learning Path 1", order = 0),
-                    KanbanColumn(id = "path_2", name = "Learning Path 2", order = 1),
-                    KanbanColumn(id = "completed", name = "Completed", order = 2),
-                ),
-            )
-            boardsCol.document(learningRef.id).set(learningBoard.toMap()).await()
-        }
+        val learningBoard = KanbanBoard(
+            id = learningRef.id,
+            projectId = learningRef.id,
+            columns = listOf(
+                KanbanColumn(id = "path_1", name = "Learning Path 1", order = 0),
+                KanbanColumn(id = "path_2", name = "Learning Path 2", order = 1),
+                KanbanColumn(id = "completed", name = "Completed", order = 2),
+            ),
+        )
+        boardsCol.document(learningRef.id).set(learningBoard.toMap()).await()
     }
 
     override fun getBoard(projectId: String): Flow<KanbanBoard?> {

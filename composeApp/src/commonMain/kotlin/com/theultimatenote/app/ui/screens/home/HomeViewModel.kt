@@ -141,17 +141,19 @@ class HomeViewModel(
         viewModelScope.launch {
             taskRepository.updateTask(task)
             if (task.isRecurring && task.scheduledTime != null) {
-                val parts = task.scheduledTime.split(":")
-                if (parts.size == 2) {
-                    val hour = parts[0].toIntOrNull()
-                    val minute = parts[1].toIntOrNull()
-                    if (hour != null && minute != null) {
-                        notificationScheduler.scheduleTaskReminder(task.id, task.title, hour, minute)
-                    }
-                }
+                scheduleNotification(task.id, task.title, task.scheduledTime)
             } else {
                 notificationScheduler.cancelTaskReminder(task.id)
             }
+        }
+    }
+
+    private fun scheduleNotification(taskId: String, title: String, time: String) {
+        val parts = time.split(":")
+        if (parts.size == 2) {
+            val hour = parts[0].toIntOrNull() ?: return
+            val minute = parts[1].toIntOrNull() ?: return
+            notificationScheduler.scheduleTaskReminder(taskId, title, hour, minute)
         }
     }
 
@@ -223,14 +225,7 @@ class HomeViewModel(
                 )
             )
             if (isRecurring && scheduledTime != null) {
-                val parts = scheduledTime.split(":")
-                if (parts.size == 2) {
-                    val hour = parts[0].toIntOrNull()
-                    val minute = parts[1].toIntOrNull()
-                    if (hour != null && minute != null) {
-                        notificationScheduler.scheduleTaskReminder(taskId, title.trim(), hour, minute)
-                    }
-                }
+                scheduleNotification(taskId, title.trim(), scheduledTime)
             }
         }
     }

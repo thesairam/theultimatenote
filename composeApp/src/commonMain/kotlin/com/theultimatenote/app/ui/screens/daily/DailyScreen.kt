@@ -67,6 +67,8 @@ import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.ui.components.EisenhowerMatrixView
 import com.theultimatenote.app.ui.components.TaskEditDialog
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.CircularProgressIndicator
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +80,6 @@ fun DailyScreen() {
     val dailyTasks = state.dailyTasks
     val learningTasks = state.learningTasks
     val dailyProject = state.dailyProject
-    val learningProject = state.learningProject
     val dailyBoard = state.dailyBoard
     val dailyLimitReached by viewModel.limitReached.collectAsState()
 
@@ -132,11 +133,11 @@ fun DailyScreen() {
         },
     ) { innerPadding ->
         if (state.isLoading) {
-            androidx.compose.foundation.layout.Box(
+            Box(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center,
             ) {
-                androidx.compose.material3.CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
             return@Scaffold
         }

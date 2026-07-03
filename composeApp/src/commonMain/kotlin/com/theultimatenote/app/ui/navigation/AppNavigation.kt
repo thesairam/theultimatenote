@@ -195,7 +195,6 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
         ) {
             composable<HomeRoute> {
                 HomeScreen(
-                    onSignOut = { authViewModel.signOut() },
                     onNavigateToProfile = { navController.navigate(ProfileRoute) },
                     onNavigateToChat = { navController.navigate(ChatRoute) },
                     onNavigateToStats = { navController.navigate(StatsRoute) },
