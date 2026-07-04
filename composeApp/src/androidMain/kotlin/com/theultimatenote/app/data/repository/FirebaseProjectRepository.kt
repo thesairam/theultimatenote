@@ -50,6 +50,10 @@ class FirebaseProjectRepository : ProjectRepository {
         return docRef.id
     }
 
+    override suspend fun toggleStarProject(projectId: String, isStarred: Boolean) {
+        projectsCol.document(projectId).update("isStarred", isStarred).await()
+    }
+
     override suspend fun completeProject(projectId: String) {
         projectsCol.document(projectId).update(
             mapOf(
@@ -203,6 +207,7 @@ class FirebaseProjectRepository : ProjectRepository {
             isDeletable = getBoolean("isDeletable") ?: true,
             isCompleted = getBoolean("isCompleted") ?: false,
             completedAt = getLong("completedAt") ?: 0L,
+            isStarred = getBoolean("isStarred") ?: false,
         )
     }
 
@@ -216,6 +221,7 @@ class FirebaseProjectRepository : ProjectRepository {
         "isDeletable" to isDeletable,
         "isCompleted" to isCompleted,
         "completedAt" to completedAt,
+        "isStarred" to isStarred,
     )
 
     private fun KanbanBoard.toMap() = mapOf(

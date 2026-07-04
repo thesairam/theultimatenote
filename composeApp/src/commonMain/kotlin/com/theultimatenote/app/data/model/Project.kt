@@ -20,4 +20,5 @@ data class Project(
     val isDeletable: Boolean = true,
     val isCompleted: Boolean = false,
     val completedAt: Long = 0L,
+    val isStarred: Boolean = false,
 )

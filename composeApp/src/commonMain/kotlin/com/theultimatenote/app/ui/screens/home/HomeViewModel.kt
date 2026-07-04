@@ -19,6 +19,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -30,19 +31,21 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
-data class ProjectSummary(
-    val project: Project,
-    val totalTasks: Int,
-    val completedTasks: Int,
-    val activeTasks: Int,
-)
-
 data class HomeUiState(
     val isLoading: Boolean = true,
     val userName: String = "",
-    val projectSummaries: List<ProjectSummary> = emptyList(),
-    val completedCount: Int = 0,
-    val totalCount: Int = 0,
+    val starredProjects: List<Project> = emptyList(),
+    val completedToday: Int = 0,
+    val totalToday: Int = 0,
+    val activeProjectCount: Int = 0,
+    val completedProjectCount: Int = 0,
+    val pomodoroSessionsToday: Int = 0,
+    val pomodoroMinutesToday: Int = 0,
+    val dailyTasksCompleted: Int = 0,
+    val learningTasksCompleted: Int = 0,
+    val projectTasksCompleted: Int = 0,
+    val totalFocusMinutes: Int = 0,
+    val totalPomodoroSessions: Int = 0,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -59,6 +62,9 @@ class HomeViewModel(
 
     fun dismissLimit() { _limitReached.value = null }
 
+    private val today: String
+        get() = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+
     private val allProjects = authRepository.currentUser
         .flatMapLatest { user ->
             if (user != null) projectRepository.getProjects(user.uid) else flowOf(emptyList())
@@ -73,6 +79,18 @@ class HomeViewModel(
         }) { it.toList() }
     }
 
+    private val todaysSessions = authRepository.currentUser
+        .flatMapLatest { user ->
+            if (user != null) pomodoroRepository.getSessionsForDate(user.uid, today)
+            else flowOf(emptyList())
+        }.catch { emit(emptyList()) }
+
+    private val allSessions = authRepository.currentUser
+        .flatMapLatest { user ->
+            if (user != null) pomodoroRepository.getSessions(user.uid)
+            else flowOf(emptyList())
+        }.catch { emit(emptyList()) }
+
     val projects: StateFlow<List<Project>> = allProjects
         .map { it.filter { p -> !p.isCompleted } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -82,32 +100,43 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = combine(
         authRepository.currentUser,
         allProjectsWithTasks,
-    ) { user, projectsWithTasks ->
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+        todaysSessions,
+        allSessions,
+    ) { user, projectsWithTasks, todaySessions, allPomSessions ->
+        val todayStr = today
 
-        val summaries = projectsWithTasks
-            .filter { (project, _) -> !project.isCompleted }
-            .map { (project, tasks) ->
-                val todayRelevant = tasks.filter {
-                    it.isRecurring || !it.isCompletedToday || it.completedDate == today
-                }
-                ProjectSummary(
-                    project = project,
-                    totalTasks = todayRelevant.size,
-                    completedTasks = todayRelevant.count { it.isCompletedToday },
-                    activeTasks = todayRelevant.count { !it.isCompletedToday },
-                )
-            }
+        val activeProjects = projectsWithTasks.filter { !it.first.isCompleted }
+        val starred = activeProjects
+            .filter { it.first.isStarred }
+            .map { it.first }
 
-        val totalCompleted = summaries.sumOf { it.completedTasks }
-        val totalAll = summaries.sumOf { it.totalTasks }
+        val allTasks = activeProjects.flatMap { it.second }
+        val todayRelevant = allTasks.filter {
+            it.isRecurring || !it.isCompletedToday || it.completedDate == todayStr
+        }
+
+        val dailyTasks = activeProjects.filter { it.first.type == ProjectType.DAILY }.flatMap { it.second }
+        val learningTasks = activeProjects.filter { it.first.type == ProjectType.LEARNING }.flatMap { it.second }
+        val projectTasks = activeProjects.filter { it.first.type == ProjectType.REGULAR }.flatMap { it.second }
+
+        val completedSessions = todaySessions.filter { it.completed }
+        val allCompletedSessions = allPomSessions.filter { it.completed }
 
         HomeUiState(
             isLoading = false,
             userName = user?.displayName ?: "there",
-            projectSummaries = summaries,
-            completedCount = totalCompleted,
-            totalCount = totalAll,
+            starredProjects = starred,
+            completedToday = todayRelevant.count { it.isCompletedToday },
+            totalToday = todayRelevant.size,
+            activeProjectCount = activeProjects.size,
+            completedProjectCount = projectsWithTasks.count { it.first.isCompleted },
+            pomodoroSessionsToday = completedSessions.size,
+            pomodoroMinutesToday = completedSessions.sumOf { it.durationMinutes },
+            dailyTasksCompleted = dailyTasks.count { it.isCompletedToday },
+            learningTasksCompleted = learningTasks.count { it.isCompletedToday },
+            projectTasksCompleted = projectTasks.count { it.isCompletedToday },
+            totalFocusMinutes = allCompletedSessions.sumOf { it.durationMinutes },
+            totalPomodoroSessions = allCompletedSessions.size,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState())
 
@@ -167,7 +196,7 @@ class HomeViewModel(
             val user = authRepository.currentUser.first() ?: return@launch
             val sub = subscriptionRepository.getSubscription(user.uid).first()
             if (sub.subscriptionTier == SubscriptionTier.FREE) {
-                val totalActive = uiState.value.projectSummaries.sumOf { it.activeTasks }
+                val totalActive = uiState.value.totalToday - uiState.value.completedToday
                 if (totalActive >= SubscriptionLimits.FREE_MAX_ACTIVE_TASKS) {
                     _limitReached.value = "You've reached the free limit of ${SubscriptionLimits.FREE_MAX_ACTIVE_TASKS} active tasks. Upgrade to Pro for unlimited tasks."
                     return@launch

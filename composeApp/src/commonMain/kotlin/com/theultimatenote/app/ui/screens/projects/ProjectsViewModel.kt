@@ -76,6 +76,12 @@ class ProjectsViewModel(
         }
     }
 
+    fun toggleStar(project: Project) {
+        viewModelScope.launch {
+            projectRepository.toggleStarProject(project.id, !project.isStarred)
+        }
+    }
+
     fun completeProject(project: Project) {
         if (project.type != ProjectType.REGULAR) return
         viewModelScope.launch {

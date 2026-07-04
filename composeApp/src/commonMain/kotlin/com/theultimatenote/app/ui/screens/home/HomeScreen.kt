@@ -28,11 +28,17 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.WorkHistory
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -66,6 +72,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.ChecklistItem
@@ -146,6 +153,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // Greeting
             item {
                 Column {
                     Text(
@@ -167,97 +175,56 @@ fun HomeScreen(
                 }
             }
 
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth().clickable { onNavigateToStats() },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    shape = RoundedCornerShape(20.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                ) {
+            // Starred project shortcuts
+            if (uiState.starredProjects.isNotEmpty()) {
+                item {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        Text(
-                            text = if (uiState.totalCount > 0) "${uiState.completedCount}/${uiState.totalCount} done today"
-                                else "No tasks yet — tap + to get started",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = goldColor,
+                            modifier = Modifier.size(18.dp),
                         )
                         Text(
-                            text = "View Dashboard →",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.tertiary,
-                        )
-                    }
-                }
-            }
-
-            val specialProjects = uiState.projectSummaries.filter {
-                it.project.type == ProjectType.DAILY || it.project.type == ProjectType.LEARNING
-            }
-            val regularProjects = uiState.projectSummaries.filter {
-                it.project.type == ProjectType.REGULAR
-            }
-
-            if (specialProjects.isNotEmpty()) {
-                item {
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-                items(specialProjects, key = { "home-${it.project.id}" }) { summary ->
-                    ProjectSummaryCard(
-                        summary = summary,
-                        isSpecial = true,
-                        goldColor = goldColor,
-                        onClick = {
-                            onNavigateToBoard(summary.project.id, summary.project.name, summary.project.type.name)
-                        },
-                    )
-                }
-            }
-
-            if (regularProjects.isNotEmpty()) {
-                item {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Projects",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                items(regularProjects, key = { "home-${it.project.id}" }) { summary ->
-                    ProjectSummaryCard(
-                        summary = summary,
-                        isSpecial = false,
-                        goldColor = goldColor,
-                        onClick = {
-                            onNavigateToBoard(summary.project.id, summary.project.name, summary.project.type.name)
-                        },
-                    )
-                }
-            }
-
-            if (uiState.projectSummaries.isEmpty()) {
-                item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = "No projects yet",
+                            text = "Shortcuts",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = "Tap + to add a task or create a project",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp),
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
+                items(uiState.starredProjects, key = { "starred-${it.id}" }) { project ->
+                    StarredProjectCard(
+                        project = project,
+                        goldColor = goldColor,
+                        onClick = {
+                            onNavigateToBoard(project.id, project.name, project.type.name)
+                        },
+                    )
+                }
             }
+
+            // Today's Progress
+            item {
+                Spacer(modifier = Modifier.height(4.dp))
+                TodayProgressCard(uiState)
+            }
+
+            // Focus Sessions
+            item { FocusCard(uiState) }
+
+            // Task Breakdown
+            item { BreakdownCard(uiState) }
+
+            // Projects overview
+            item { ProjectsOverviewCard(uiState, goldColor) }
+
+            // All-time focus
+            item { AllTimeFocusCard(uiState) }
+
+            item { Spacer(modifier = Modifier.height(60.dp)) }
         }
     }
 
@@ -281,21 +248,17 @@ fun HomeScreen(
 }
 
 @Composable
-private fun ProjectSummaryCard(
-    summary: ProjectSummary,
-    isSpecial: Boolean,
+private fun StarredProjectCard(
+    project: Project,
     goldColor: Color,
     onClick: () -> Unit,
 ) {
-    val icon = when (summary.project.type) {
+    val icon = when (project.type) {
         ProjectType.DAILY -> Icons.Default.CalendarToday
         ProjectType.LEARNING -> Icons.Default.School
         ProjectType.REGULAR -> Icons.Default.Folder
     }
-
-    val progress = if (summary.totalTasks > 0) {
-        summary.completedTasks.toFloat() / summary.totalTasks
-    } else 0f
+    val isSpecial = project.type == ProjectType.DAILY || project.type == ProjectType.LEARNING
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
@@ -306,76 +269,299 @@ private fun ProjectSummaryCard(
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(0.75.dp, if (isSpecial) goldColor.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (isSpecial) goldColor else MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp),
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = project.name,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "Open →",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (isSpecial) goldColor else MaterialTheme.colorScheme.tertiary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TodayProgressCard(uiState: HomeUiState) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = if (isSpecial) goldColor else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(28.dp),
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = summary.project.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Default.Today,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
-                    if (isSpecial) {
-                        Text(
-                            text = "✦ Special Project",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = goldColor,
-                        )
-                    }
+                    Text(
+                        text = "Today's Progress",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
                 }
                 Text(
-                    text = "Open →",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (isSpecial) goldColor else MaterialTheme.colorScheme.tertiary,
+                    text = "${uiState.completedToday}/${uiState.totalToday}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.tertiary,
                 )
             }
-
-            if (summary.totalTasks > 0) {
-                Spacer(modifier = Modifier.height(12.dp))
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(6.dp),
-                    color = if (isSpecial) goldColor else MaterialTheme.colorScheme.tertiary,
-                    trackColor = if (isSpecial) goldColor.copy(alpha = 0.15f)
-                        else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = "${summary.completedTasks}/${summary.totalTasks} done today",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (summary.activeTasks > 0) {
-                        Text(
-                            text = "${summary.activeTasks} remaining",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            } else {
+            Spacer(modifier = Modifier.height(12.dp))
+            LinearProgressIndicator(
+                progress = {
+                    if (uiState.totalToday > 0) uiState.completedToday.toFloat() / uiState.totalToday
+                    else 0f
+                },
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                color = MaterialTheme.colorScheme.tertiary,
+                trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
+            )
+            if (uiState.totalToday > 0) {
                 Spacer(modifier = Modifier.height(8.dp))
+                val pct = (uiState.completedToday * 100) / uiState.totalToday
                 Text(
-                    text = "No tasks yet",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = "$pct% complete",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun FocusCard(uiState: HomeUiState) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Default.Timer,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                )
+                Text(
+                    text = "Focus Sessions Today",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                StatNumber(
+                    value = "${uiState.pomodoroSessionsToday}",
+                    label = "Sessions",
+                    icon = Icons.Default.LocalFireDepartment,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                StatNumber(
+                    value = "${uiState.pomodoroMinutesToday}m",
+                    label = "Focus Time",
+                    icon = Icons.Default.Timer,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BreakdownCard(uiState: HomeUiState) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                )
+                Text(
+                    text = "Completed Today",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                StatNumber(
+                    value = "${uiState.dailyTasksCompleted}",
+                    label = "Daily",
+                    icon = Icons.Default.Today,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                StatNumber(
+                    value = "${uiState.learningTasksCompleted}",
+                    label = "Learning",
+                    icon = Icons.Default.School,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+                StatNumber(
+                    value = "${uiState.projectTasksCompleted}",
+                    label = "Projects",
+                    icon = Icons.Default.WorkHistory,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProjectsOverviewCard(uiState: HomeUiState, goldColor: Color) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Default.Folder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = "Projects",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                StatNumber(
+                    value = "${uiState.activeProjectCount}",
+                    label = "Active",
+                    icon = Icons.Default.Folder,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                StatNumber(
+                    value = "${uiState.completedProjectCount}",
+                    label = "Completed",
+                    icon = Icons.Default.CheckCircle,
+                    color = goldColor,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AllTimeFocusCard(uiState: HomeUiState) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                text = "All Time Focus",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                StatNumber(
+                    value = "${uiState.totalPomodoroSessions}",
+                    label = "Sessions",
+                    icon = Icons.Default.LocalFireDepartment,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                val hours = uiState.totalFocusMinutes / 60
+                val mins = uiState.totalFocusMinutes % 60
+                val timeText = if (hours > 0) "${hours}h ${mins}m" else "${mins}m"
+                StatNumber(
+                    value = timeText,
+                    label = "Total Focus",
+                    icon = Icons.Default.Timer,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatNumber(
+    value: String,
+    label: String,
+    icon: ImageVector,
+    color: Color,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = color,
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color.copy(alpha = 0.7f),
+        )
     }
 }
 

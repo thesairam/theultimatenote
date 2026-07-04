@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -134,6 +136,7 @@ fun ProjectsScreen(
                         ProjectCard(
                             project = project,
                             onClick = { onNavigateToBoard(project.id, project.name, project.type.name) },
+                            onStar = { viewModel.toggleStar(project) },
                             onComplete = { viewModel.completeProject(project) },
                             onDelete = { viewModel.deleteProject(project) },
                         )
@@ -216,6 +219,7 @@ fun ProjectsScreen(
 private fun ProjectCard(
     project: Project,
     onClick: () -> Unit,
+    onStar: () -> Unit,
     onComplete: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -271,6 +275,14 @@ private fun ProjectCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+            IconButton(onClick = onStar, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    if (project.isStarred) Icons.Default.Star else Icons.Default.StarBorder,
+                    contentDescription = if (project.isStarred) "Unstar" else "Star",
+                    tint = if (project.isStarred) goldColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.size(20.dp),
+                )
             }
             if (project.type == ProjectType.REGULAR) {
                 IconButton(onClick = { showCompleteConfirm = true }, modifier = Modifier.size(36.dp)) {
