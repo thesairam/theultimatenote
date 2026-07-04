@@ -1,7 +1,9 @@
 package com.theultimatenote.app.ui.screens.stats
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.theultimatenote.app.data.model.PomodoroSession
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.model.Task
@@ -24,6 +26,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
+@Immutable
 data class ProjectStats(
     val projectName: String,
     val projectType: ProjectType,
@@ -32,6 +35,7 @@ data class ProjectStats(
     val isCompleted: Boolean,
 )
 
+@Immutable
 data class StatsUiState(
     val totalTasksToday: Int = 0,
     val completedToday: Int = 0,
@@ -60,7 +64,10 @@ class StatsViewModel(
     private val today: String
         get() = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
 
-    private val allProjects = authRepository.currentUser
+    private val cachedUser = authRepository.currentUser
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private val allProjects = cachedUser
         .flatMapLatest { user ->
             if (user != null) projectRepository.getProjects(user.uid) else flowOf(emptyList())
         }
@@ -74,23 +81,19 @@ class StatsViewModel(
         }) { it.toList() }
     }
 
-    private val todaysSessions = authRepository.currentUser
+    private val pomodoroData = cachedUser
         .flatMapLatest { user ->
-            if (user != null) pomodoroRepository.getSessionsForDate(user.uid, today)
-            else flowOf(emptyList())
-        }.catch { emit(emptyList()) }
-
-    private val allSessions = authRepository.currentUser
-        .flatMapLatest { user ->
-            if (user != null) pomodoroRepository.getSessions(user.uid)
-            else flowOf(emptyList())
-        }.catch { emit(emptyList()) }
+            if (user == null) flowOf(emptyList<PomodoroSession>() to emptyList<PomodoroSession>())
+            else combine(
+                pomodoroRepository.getSessionsForDate(user.uid, today).catch { emit(emptyList()) },
+                pomodoroRepository.getSessions(user.uid).catch { emit(emptyList()) },
+            ) { todaySessions, allSessions -> todaySessions to allSessions }
+        }
 
     val uiState: StateFlow<StatsUiState> = combine(
         allTasksByProject,
-        todaysSessions,
-        allSessions,
-    ) { tasksByProject, todaySessions, allPomSessions ->
+        pomodoroData,
+    ) { tasksByProject, (todaySessions, allPomSessions) ->
         val allTasks = tasksByProject.flatMap { it.third }
         val dailyTasks = tasksByProject.filter { it.second == ProjectType.DAILY }.flatMap { it.third }
         val learningTasks = tasksByProject.filter { it.second == ProjectType.LEARNING }.flatMap { it.third }
@@ -132,7 +135,7 @@ class StatsViewModel(
 
     fun resetStats() {
         viewModelScope.launch {
-            val userId = authRepository.currentUser.first()?.uid ?: return@launch
+            val userId = cachedUser.value?.uid ?: return@launch
             pomodoroRepository.clearAllSessions(userId)
         }
     }

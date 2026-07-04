@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.theultimatenote.app.notifications.NotificationHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -53,7 +54,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun scheduleRecurringTaskReminders() {
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             val user = FirebaseAuth.getInstance().currentUser ?: return@launch
             val db = FirebaseFirestore.getInstance()
             val projects = db.collection("projects")

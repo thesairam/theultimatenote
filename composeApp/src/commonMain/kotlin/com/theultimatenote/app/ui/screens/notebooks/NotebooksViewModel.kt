@@ -39,7 +39,10 @@ class NotebooksViewModel(
     private val imageStorageRepository: ImageStorageRepository,
 ) : ViewModel() {
 
-    val notebooks: StateFlow<List<Notebook>> = authRepository.currentUser
+    private val cachedUser = authRepository.currentUser
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val notebooks: StateFlow<List<Notebook>> = cachedUser
         .flatMapLatest { user ->
             if (user != null) notebookRepository.getNotebooks(user.uid) else flowOf(emptyList())
         }
@@ -78,7 +81,7 @@ class NotebooksViewModel(
 
     fun createNotebook(name: String, description: String = "") {
         viewModelScope.launch {
-            val user = authRepository.currentUser.stateIn(viewModelScope).value ?: return@launch
+            val user = cachedUser.value ?: return@launch
             try {
                 notebookRepository.createNotebook(
                     Notebook(
@@ -115,7 +118,7 @@ class NotebooksViewModel(
         val notebook = _uiState.value.selectedNotebook ?: return
         viewModelScope.launch {
             try {
-                val user = authRepository.currentUser.stateIn(viewModelScope).value ?: return@launch
+                val user = cachedUser.value ?: return@launch
                 val sub = subscriptionRepository.getSubscription(user.uid).first()
                 if (sub.subscriptionTier == SubscriptionTier.FREE) {
                     val currentPageCount = _pages.value.size
@@ -158,7 +161,7 @@ class NotebooksViewModel(
 
     fun uploadImage(imageBytes: ByteArray, onResult: (String) -> Unit) {
         viewModelScope.launch {
-            val user = authRepository.currentUser.first() ?: return@launch
+            val user = cachedUser.value ?: return@launch
             val fileName = "notebook_${Clock.System.now().toEpochMilliseconds()}.jpg"
             val url = imageStorageRepository.uploadImage(user.uid, imageBytes, fileName)
             onResult(url)

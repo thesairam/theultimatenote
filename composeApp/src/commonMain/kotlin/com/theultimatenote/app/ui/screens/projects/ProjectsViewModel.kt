@@ -38,16 +38,23 @@ class ProjectsViewModel(
 
     fun dismissLimit() { _limitReached.value = null }
 
-    val projects: StateFlow<List<Project>> = authRepository.currentUser
+    private val cachedUser = authRepository.currentUser
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val projects: StateFlow<List<Project>> = cachedUser
         .flatMapLatest { user ->
             if (user != null) projectRepository.getProjects(user.uid) else flowOf(emptyList())
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    init {
+        ensureDefaultProjects()
+    }
+
     fun createProject(name: String) {
         if (name.isBlank()) return
         viewModelScope.launch {
-            val user = authRepository.currentUser.first() ?: return@launch
+            val user = cachedUser.value ?: return@launch
             val sub = subscriptionRepository.getSubscription(user.uid).first()
             if (sub.subscriptionTier == SubscriptionTier.FREE) {
                 val regularCount = projects.value.count { it.type == ProjectType.REGULAR }
@@ -96,9 +103,9 @@ class ProjectsViewModel(
         }
     }
 
-    fun ensureDefaultProjects() {
+    private fun ensureDefaultProjects() {
         viewModelScope.launch {
-            val user = authRepository.currentUser.first() ?: return@launch
+            val user = cachedUser.first { it != null } ?: return@launch
             projectRepository.createDefaultProjects(user.uid)
         }
     }

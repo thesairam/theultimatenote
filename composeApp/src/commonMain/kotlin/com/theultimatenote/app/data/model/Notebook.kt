@@ -1,7 +1,9 @@
 package com.theultimatenote.app.data.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
+@Immutable
 @Serializable
 data class Notebook(
     val id: String = "",
@@ -12,6 +14,7 @@ data class Notebook(
     val createdAt: Long = 0L,
 )
 
+@Immutable
 @Serializable
 data class NotebookPage(
     val id: String = "",

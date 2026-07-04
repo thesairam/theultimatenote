@@ -1,5 +1,6 @@
 package com.theultimatenote.app.data.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -9,6 +10,7 @@ enum class ProjectType {
     LEARNING,
 }
 
+@Immutable
 @Serializable
 data class Project(
     val id: String = "",

@@ -144,7 +144,7 @@ fun DailyScreen() {
 
         Crossfade(targetState = showMatrix, animationSpec = tween(120)) { isMatrix ->
         if (isMatrix) {
-            val allDailyTasks = dailyTasks + learningTasks
+            val allDailyTasks = remember(dailyTasks, learningTasks) { dailyTasks + learningTasks }
             val columns = dailyBoard?.columns ?: emptyList()
             EisenhowerMatrixView(
                 tasks = allDailyTasks,
@@ -158,6 +158,8 @@ fun DailyScreen() {
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             )
         } else {
+        val recurringTasks = remember(dailyTasks) { dailyTasks.filter { it.isRecurring } }
+        val tempTasks = remember(dailyTasks) { dailyTasks.filter { !it.isRecurring } }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),

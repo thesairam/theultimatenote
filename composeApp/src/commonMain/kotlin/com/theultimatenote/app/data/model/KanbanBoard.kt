@@ -1,7 +1,9 @@
 package com.theultimatenote.app.data.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
+@Immutable
 @Serializable
 data class KanbanBoard(
     val id: String = "",
@@ -9,6 +11,7 @@ data class KanbanBoard(
     val columns: List<KanbanColumn> = emptyList(),
 )
 
+@Immutable
 @Serializable
 data class KanbanColumn(
     val id: String = "",

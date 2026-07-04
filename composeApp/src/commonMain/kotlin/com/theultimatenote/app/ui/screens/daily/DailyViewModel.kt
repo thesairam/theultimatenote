@@ -1,5 +1,6 @@
 package com.theultimatenote.app.ui.screens.daily
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theultimatenote.app.data.model.KanbanBoard
@@ -22,13 +23,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
+@Immutable
 data class DailyUiState(
     val isLoading: Boolean = true,
     val dailyProject: Project? = null,
@@ -51,61 +52,59 @@ class DailyViewModel(
     val limitReached = _limitReached.asStateFlow()
     fun dismissLimit() { _limitReached.value = null }
 
-    private val allProjects = authRepository.currentUser
+    private val cachedUser = authRepository.currentUser
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private val allProjects = cachedUser
         .flatMapLatest { user ->
             if (user != null) projectRepository.getProjects(user.uid) else flowOf(emptyList())
         }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val dailyProjectFlow = allProjects
-        .map { projects -> projects.find { it.type == ProjectType.DAILY } }
-
-    private val learningProjectFlow = allProjects
-        .map { projects -> projects.find { it.type == ProjectType.LEARNING } }
-
-    private val dailyBoardFlow = dailyProjectFlow
-        .flatMapLatest { project ->
-            if (project != null) projectRepository.getBoard(project.id) else flowOf(null)
-        }
-
-    private val dailyTasksFlow = dailyProjectFlow
-        .flatMapLatest { project ->
-            if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
-        }
-
-    private val learningTasksFlow = learningProjectFlow
-        .flatMapLatest { project ->
-            if (project != null) taskRepository.getTasksForProject(project.id) else flowOf(emptyList())
-        }
-
-    val uiState: StateFlow<DailyUiState> = combine(
-        dailyProjectFlow,
-        learningProjectFlow,
-        dailyBoardFlow,
-        dailyTasksFlow,
-        learningTasksFlow,
-    ) { daily, learning, board, dailyTasks, learningTasks ->
-        DailyUiState(
-            isLoading = false,
-            dailyProject = daily,
-            learningProject = learning,
-            dailyBoard = board,
-            dailyTasks = dailyTasks,
-            learningTasks = learningTasks,
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyUiState())
-
-    init {
-        resetRecurringTasksIfNeeded()
-    }
-
-    private fun resetRecurringTasksIfNeeded() {
-        viewModelScope.launch {
-            val projects = allProjects.first()
-            projects.filter { it.type == ProjectType.DAILY || it.type == ProjectType.LEARNING }.forEach { project ->
-                taskRepository.resetRecurringTasks(project.id)
+    private val specialProjects = allProjects
+        .flatMapLatest { projects ->
+            val daily = projects.find { it.type == ProjectType.DAILY }
+            val learning = projects.find { it.type == ProjectType.LEARNING }
+            if (daily == null && learning == null) flowOf(DailyUiState(isLoading = false))
+            else {
+                val flows = listOfNotNull(
+                    daily?.let { d ->
+                        combine(
+                            projectRepository.getBoard(d.id),
+                            taskRepository.getTasksForProject(d.id),
+                        ) { board, tasks -> Triple(board, tasks, null as List<Task>?) }
+                    },
+                    learning?.let { l ->
+                        taskRepository.getTasksForProject(l.id)
+                            .flatMapLatest { tasks ->
+                                flowOf(Triple(null as KanbanBoard?, null as List<Task>?, tasks))
+                            }
+                    },
+                )
+                if (flows.isEmpty()) flowOf(DailyUiState(isLoading = false))
+                else combine(flows) { results ->
+                    var board: KanbanBoard? = null
+                    var dailyTasks: List<Task> = emptyList()
+                    var learningTasks: List<Task> = emptyList()
+                    for (r in results) {
+                        if (r.first != null) board = r.first
+                        if (r.second != null) dailyTasks = r.second!!
+                        if (r.third != null) learningTasks = r.third!!
+                    }
+                    DailyUiState(
+                        isLoading = false,
+                        dailyProject = daily,
+                        learningProject = learning,
+                        dailyBoard = board,
+                        dailyTasks = dailyTasks,
+                        learningTasks = learningTasks,
+                    )
+                }
             }
         }
-    }
+
+    val uiState: StateFlow<DailyUiState> = specialProjects
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyUiState())
 
     fun addDailyTask(
         title: String,
@@ -118,7 +117,7 @@ class DailyViewModel(
         if (title.isBlank()) return
         val columnId = if (isRecurring) "recurring" else "temporary"
         viewModelScope.launch {
-            val user = authRepository.currentUser.first() ?: return@launch
+            val user = cachedUser.value ?: return@launch
             val sub = subscriptionRepository.getSubscription(user.uid).first()
             if (sub.subscriptionTier == SubscriptionTier.FREE) {
                 val state = uiState.value

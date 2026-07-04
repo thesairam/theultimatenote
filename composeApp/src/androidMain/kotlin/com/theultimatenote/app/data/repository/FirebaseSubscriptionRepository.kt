@@ -1,5 +1,6 @@
 package com.theultimatenote.app.data.repository
 
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.snapshots
 import com.theultimatenote.app.data.model.SubscriptionInfo
@@ -52,7 +53,10 @@ class FirebaseSubscriptionRepository : SubscriptionRepository {
         val docRef = usersCol.document(userId).collection("settings").document("ai_usage")
         val doc = docRef.get().await()
         val currentDate = if (doc.exists()) doc.getString("date") ?: "" else ""
-        val currentCount = if (doc.exists() && currentDate == today) (doc.getLong("count") ?: 0L).toInt() else 0
-        docRef.set(mapOf("date" to today, "count" to currentCount + 1)).await()
+        if (currentDate == today) {
+            docRef.update("count", FieldValue.increment(1)).await()
+        } else {
+            docRef.set(mapOf("date" to today, "count" to 1)).await()
+        }
     }
 }

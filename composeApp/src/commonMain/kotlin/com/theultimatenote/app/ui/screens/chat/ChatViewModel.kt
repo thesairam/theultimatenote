@@ -1,5 +1,6 @@
 package com.theultimatenote.app.ui.screens.chat
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theultimatenote.app.data.model.ChatAction
@@ -15,17 +16,20 @@ import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.data.repository.SubscriptionRepository
 import com.theultimatenote.app.data.repository.TaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 
+@Immutable
 data class ChatUiState(
     val messages: List<ChatMessage> = emptyList(),
     val isLoading: Boolean = false,
@@ -47,6 +51,9 @@ class ChatViewModel(
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
+    private val cachedUser = authRepository.currentUser
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     private var userId: String? = null
 
     init {
@@ -55,7 +62,7 @@ class ChatViewModel(
 
     private fun loadChatHistory() {
         viewModelScope.launch {
-            val user = authRepository.currentUser.first()
+            val user = cachedUser.first { it != null }
             userId = user?.uid
             if (userId == null) return@launch
 
@@ -154,8 +161,8 @@ class ChatViewModel(
     }
 
     private suspend fun executeCreateTask(action: ChatAction) {
-        val user = authRepository.currentUser.first() ?: return
-        val projects = projectRepository.getProjects(user.uid).first()
+        val uid = userId ?: return
+        val projects = projectRepository.getProjects(uid).first()
         val project = projects.find {
             it.name.equals(action.projectName, ignoreCase = true)
         } ?: return
@@ -195,63 +202,67 @@ class ChatViewModel(
     }
 
     private suspend fun executeCreateProject(action: ChatAction) {
-        val user = authRepository.currentUser.first() ?: return
+        val uid = userId ?: return
         projectRepository.createProject(
             com.theultimatenote.app.data.model.Project(
                 name = action.projectName,
                 type = ProjectType.REGULAR,
-                ownerId = user.uid,
+                ownerId = uid,
                 createdAt = Clock.System.now().toEpochMilliseconds(),
             )
         )
     }
 
     private suspend fun buildSystemContext(): String = withContext(Dispatchers.Default) {
-        val user = authRepository.currentUser.first() ?: return@withContext ""
-        val projects = projectRepository.getProjects(user.uid).first()
+        val uid = userId ?: return@withContext ""
+        val projects = projectRepository.getProjects(uid).first()
 
-        val sb = StringBuilder()
-        sb.appendLine("You are the AI assistant for \"Connecting Dots\" — a productivity app combining Kanban boards, journaling, daily planning, and learning tracking.")
-        sb.appendLine()
-        sb.appendLine("The user's current projects and tasks:")
-        sb.appendLine()
-
-        for (project in projects) {
-            val board = projectRepository.getBoard(project.id).first()
-            val tasks = taskRepository.getTasksForProject(project.id).first()
-            val columns = board?.columns?.sortedBy { it.order } ?: emptyList()
-
-            sb.appendLine("- ${project.name} (${project.type.name})")
-            sb.appendLine("  Columns: ${columns.joinToString(", ") { it.name }}")
-            if (tasks.isNotEmpty()) {
-                sb.appendLine("  Tasks:")
-                for (task in tasks.take(10)) {
-                    val col = columns.find { it.id == task.columnId }?.name ?: "?"
-                    val status = if (task.isCompletedToday) " [done today]" else ""
-                    val recurring = if (task.isRecurring) " (recurring)" else ""
-                    sb.appendLine("    - ${task.title} [$col]$status$recurring")
-                }
-                if (tasks.size > 10) sb.appendLine("    ... and ${tasks.size - 10} more")
+        val projectData = projects.map { project ->
+            async {
+                val board = projectRepository.getBoard(project.id).first()
+                val tasks = taskRepository.getTasksForProject(project.id).first()
+                Triple(project, board, tasks)
             }
+        }.awaitAll()
+
+        buildString {
+            appendLine("You are the AI assistant for \"Connecting Dots\" — a productivity app combining Kanban boards, journaling, daily planning, and learning tracking.")
+            appendLine()
+            appendLine("The user's current projects and tasks:")
+            appendLine()
+
+            for ((project, board, tasks) in projectData) {
+                val columns = board?.columns?.sortedBy { it.order } ?: emptyList()
+                appendLine("- ${project.name} (${project.type.name})")
+                appendLine("  Columns: ${columns.joinToString(", ") { it.name }}")
+                if (tasks.isNotEmpty()) {
+                    appendLine("  Tasks:")
+                    for (task in tasks.take(10)) {
+                        val col = columns.find { it.id == task.columnId }?.name ?: "?"
+                        val status = if (task.isCompletedToday) " [done today]" else ""
+                        val recurring = if (task.isRecurring) " (recurring)" else ""
+                        appendLine("    - ${task.title} [$col]$status$recurring")
+                    }
+                    if (tasks.size > 10) appendLine("    ... and ${tasks.size - 10} more")
+                }
+            }
+
+            appendLine()
+            appendLine("ACTIONS: When the conversation naturally leads to creating a task or project, suggest it to the user. If they agree or you think it's helpful, include an action block in your response using this exact format:")
+            appendLine()
+            appendLine("<<ACTION>>{\"type\":\"create_task\",\"projectName\":\"PROJECT_NAME\",\"title\":\"TASK_TITLE\",\"columnName\":\"COLUMN_NAME\",\"isRecurring\":false}<<END_ACTION>>")
+            appendLine("<<ACTION>>{\"type\":\"create_project\",\"projectName\":\"NEW_PROJECT_NAME\"}<<END_ACTION>>")
+            appendLine()
+            appendLine("Rules for actions:")
+            appendLine("- Use exact project names from the list above")
+            appendLine("- For Daily tasks, set isRecurring true/false and optionally scheduledTime as \"HH:mm\"")
+            appendLine("- For new projects, use type create_project")
+            appendLine("- Always ask or confirm before including an action — don't create things without the user's intent")
+            appendLine("- You can include multiple actions in one response")
+            appendLine("- Place actions at the end of your message, after the conversational text")
+            appendLine()
+            appendLine("Be helpful, concise, and proactive about suggesting organization. If the user discusses ideas, suggest tasks or projects that would help them stay organized.")
         }
-
-        sb.appendLine()
-        sb.appendLine("ACTIONS: When the conversation naturally leads to creating a task or project, suggest it to the user. If they agree or you think it's helpful, include an action block in your response using this exact format:")
-        sb.appendLine()
-        sb.appendLine("<<ACTION>>{\"type\":\"create_task\",\"projectName\":\"PROJECT_NAME\",\"title\":\"TASK_TITLE\",\"columnName\":\"COLUMN_NAME\",\"isRecurring\":false}<<END_ACTION>>")
-        sb.appendLine("<<ACTION>>{\"type\":\"create_project\",\"projectName\":\"NEW_PROJECT_NAME\"}<<END_ACTION>>")
-        sb.appendLine()
-        sb.appendLine("Rules for actions:")
-        sb.appendLine("- Use exact project names from the list above")
-        sb.appendLine("- For Daily tasks, set isRecurring true/false and optionally scheduledTime as \"HH:mm\"")
-        sb.appendLine("- For new projects, use type create_project")
-        sb.appendLine("- Always ask or confirm before including an action — don't create things without the user's intent")
-        sb.appendLine("- You can include multiple actions in one response")
-        sb.appendLine("- Place actions at the end of your message, after the conversational text")
-        sb.appendLine()
-        sb.appendLine("Be helpful, concise, and proactive about suggesting organization. If the user discusses ideas, suggest tasks or projects that would help them stay organized.")
-
-        sb.toString()
     }
 
     private fun parseActions(rawText: String): Pair<String, List<ChatAction>> {
@@ -268,7 +279,6 @@ class ChatViewModel(
                 val action = parseActionJson(jsonStr)
                 if (action != null) actions.add(action)
             } catch (_: Exception) {
-                // Skip malformed actions
             }
         }
 

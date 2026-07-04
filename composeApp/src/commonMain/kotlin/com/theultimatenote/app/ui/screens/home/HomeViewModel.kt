@@ -1,5 +1,6 @@
 package com.theultimatenote.app.ui.screens.home
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theultimatenote.app.data.model.ChecklistItem
@@ -31,6 +32,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
+@Immutable
 data class HomeUiState(
     val isLoading: Boolean = true,
     val userName: String = "",
@@ -65,10 +67,14 @@ class HomeViewModel(
     private val today: String
         get() = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
 
-    private val allProjects = authRepository.currentUser
+    private val cachedUser = authRepository.currentUser
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private val allProjects = cachedUser
         .flatMapLatest { user ->
             if (user != null) projectRepository.getProjects(user.uid) else flowOf(emptyList())
         }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val allProjectsWithTasks = allProjects.flatMapLatest { projects ->
         if (projects.isEmpty()) flowOf(emptyList())
@@ -79,17 +85,14 @@ class HomeViewModel(
         }) { it.toList() }
     }
 
-    private val todaysSessions = authRepository.currentUser
+    private val pomodoroData = cachedUser
         .flatMapLatest { user ->
-            if (user != null) pomodoroRepository.getSessionsForDate(user.uid, today)
-            else flowOf(emptyList())
-        }.catch { emit(emptyList()) }
-
-    private val allSessions = authRepository.currentUser
-        .flatMapLatest { user ->
-            if (user != null) pomodoroRepository.getSessions(user.uid)
-            else flowOf(emptyList())
-        }.catch { emit(emptyList()) }
+            if (user == null) flowOf(emptyList<PomodoroSession>() to emptyList<PomodoroSession>())
+            else combine(
+                pomodoroRepository.getSessionsForDate(user.uid, today).catch { emit(emptyList()) },
+                pomodoroRepository.getSessions(user.uid).catch { emit(emptyList()) },
+            ) { todaySessions, allSessions -> todaySessions to allSessions }
+        }
 
     val projects: StateFlow<List<Project>> = allProjects
         .map { it.filter { p -> !p.isCompleted } }
@@ -98,11 +101,10 @@ class HomeViewModel(
     val limitReached: StateFlow<String?> = _limitReached
 
     val uiState: StateFlow<HomeUiState> = combine(
-        authRepository.currentUser,
+        cachedUser,
         allProjectsWithTasks,
-        todaysSessions,
-        allSessions,
-    ) { user, projectsWithTasks, todaySessions, allPomSessions ->
+        pomodoroData,
+    ) { user, projectsWithTasks, (todaySessions, allPomSessions) ->
         val todayStr = today
 
         val activeProjects = projectsWithTasks.filter { !it.first.isCompleted }
@@ -146,7 +148,7 @@ class HomeViewModel(
 
     private fun resetRecurringTasksIfNeeded() {
         viewModelScope.launch {
-            val projects = allProjects.first()
+            val projects = allProjects.value.ifEmpty { allProjects.first { it.isNotEmpty() } }
             projects.filter { it.type == ProjectType.DAILY || it.type == ProjectType.LEARNING }.forEach { project ->
                 taskRepository.resetRecurringTasks(project.id)
             }
@@ -155,7 +157,7 @@ class HomeViewModel(
 
     fun savePomodoroSession(task: Task, durationMinutes: Int) {
         viewModelScope.launch {
-            val user = authRepository.currentUser.first() ?: return@launch
+            val user = cachedUser.value ?: return@launch
             val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
             pomodoroRepository.saveSession(
                 userId = user.uid,
@@ -193,7 +195,7 @@ class HomeViewModel(
     ) {
         if (title.isBlank() || projectId.isBlank()) return
         viewModelScope.launch {
-            val user = authRepository.currentUser.first() ?: return@launch
+            val user = cachedUser.value ?: return@launch
             val sub = subscriptionRepository.getSubscription(user.uid).first()
             if (sub.subscriptionTier == SubscriptionTier.FREE) {
                 val totalActive = uiState.value.totalToday - uiState.value.completedToday
@@ -202,7 +204,7 @@ class HomeViewModel(
                     return@launch
                 }
             }
-            val project = allProjects.first().find { it.id == projectId }
+            val project = allProjects.value.find { it.id == projectId }
             val columnId = when (project?.type) {
                 ProjectType.DAILY -> if (isRecurring) "recurring" else "temporary"
                 ProjectType.LEARNING -> {

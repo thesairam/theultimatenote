@@ -331,12 +331,15 @@ private fun QuadrantCard(
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
+            val sortedTasks = remember(tasks, isDailyProject) {
+                if (isDailyProject) tasks.sortedBy { it.scheduledTime ?: "99:99" }
+                else tasks.sortedBy { it.createdAt }
+            }
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 items(
-                    if (isDailyProject) tasks.sortedBy { it.scheduledTime ?: "99:99" }
-                    else tasks.sortedBy { it.createdAt },
+                    sortedTasks,
                     key = { "matrix-${it.id}" },
                 ) { task ->
                     val isDragged = draggedTaskId == task.id

@@ -49,7 +49,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,12 +79,8 @@ fun ProjectsScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     var showCompletedSection by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.ensureDefaultProjects()
-    }
-
-    val activeProjects = projects.filter { !it.isCompleted }
-    val completedProjects = projects.filter { it.isCompleted }
+    val activeProjects = remember(projects) { projects.filter { !it.isCompleted } }
+    val completedProjects = remember(projects) { projects.filter { it.isCompleted } }
 
     Scaffold(
         topBar = {

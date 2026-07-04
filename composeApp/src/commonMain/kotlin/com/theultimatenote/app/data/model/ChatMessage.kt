@@ -1,5 +1,8 @@
 package com.theultimatenote.app.data.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class ChatAction(
     val type: String = "",
     val projectName: String = "",
@@ -10,6 +13,7 @@ data class ChatAction(
     val executed: Boolean = false,
 )
 
+@Immutable
 data class ChatMessage(
     val id: String = "",
     val role: String = "user",
