@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Clipboard/Note body -->
+  <rect x="30" y="55" width="100" height="115" rx="14" ry="14" fill="#2D5F2D"/>
+
+  <!-- Clipboard tab/clip at top center -->
+  <rect x="60" y="45" width="40" height="20" rx="6" ry="6" fill="#2D5F2D"/>
+
+  <!-- Horizontal lines inside clipboard -->
+  <line x1="48" y1="95" x2="85" y2="95" stroke="#F5F0E8" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+  <line x1="48" y1="110" x2="78" y2="110" stroke="#F5F0E8" stroke-width="4" stroke-linecap="round" opacity="0.32"/>
+  <line x1="48" y1="125" x2="90" y2="125" stroke="#F5F0E8" stroke-width="4" stroke-linecap="round" opacity="0.25"/>
+
+  <!-- Bold swooping checkmark -->
+  <path d="M60,120 L85,148 Q90,154 95,145 L155,42"
+    fill="none" stroke="#2D5F2D" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Checkmark with lighter green overlay for depth -->
+  <path d="M60,120 L85,148 Q90,154 95,145 L155,42"
+    fill="none" stroke="#3E7E3E" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Large gold 4-point sparkle star -->
+  <path d="M163,32 C164,38 167,41 173,42 C167,43 164,46 163,52 C162,46 159,43 153,42 C159,41 162,38 163,32 Z" fill="#B8960C"/>
+
+  <!-- Small gold 4-point sparkle -->
+  <path d="M28,50 C28.5,53 30,54.5 33,55 C30,55.5 28.5,57 28,60 C27.5,57 26,55.5 23,55 C26,54.5 27.5,53 28,50 Z" fill="#B8960C"/>
+
+  <!-- Tiny gold dot accent -->
+  <circle cx="148" cy="58" r="2.5" fill="#B8960C" opacity="0.7"/>
+</svg>
