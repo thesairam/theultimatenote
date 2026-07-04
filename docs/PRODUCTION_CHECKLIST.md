@@ -6,31 +6,35 @@ Master checklist for deploying Connecting Dots to Google Play. References existi
 
 ## CRITICAL BLOCKERS (must fix before submission)
 
-### 1. App Name Mismatch
-All docs, legal pages, and store descriptions still say **"The Ultimate Note"**. Must update to **"Connecting Dots"** everywhere:
-- [ ] `docs/privacy-policy.html`
-- [ ] `docs/terms-of-service.html`
-- [ ] `docs/index.html` (landing page)
-- [ ] `docs/store-submission/STORE_DESCRIPTIONS.md`
-- [ ] `docs/store-submission/GOOGLE_PLAY_STEPS.md`
-- [ ] `docs/store-submission/PRIVACY_POLICY.md`
-- [ ] `docs/store-submission/TERMS_OF_SERVICE.md`
-- [ ] `docs/store-submission/RELEASE_BUILD_GUIDE.md`
-- [ ] `docs/store-submission/ASSET_CHECKLIST.md`
+### 1. App Name Mismatch — DONE
+All docs, legal pages, and store descriptions updated to **"Connecting Dots"**:
+- [x] `docs/privacy-policy.html`
+- [x] `docs/terms-of-service.html`
+- [x] `docs/index.html` (landing page)
+- [x] `docs/store-submission/STORE_DESCRIPTIONS.md`
+- [x] `docs/store-submission/GOOGLE_PLAY_STEPS.md`
+- [x] `docs/store-submission/PRIVACY_POLICY.md`
+- [x] `docs/store-submission/TERMS_OF_SERVICE.md`
+- [x] `docs/store-submission/RELEASE_BUILD_GUIDE.md`
+- [x] `docs/store-submission/ASSET_CHECKLIST.md`
 
-### 2. Application ID Decision
-Current: `com.theultimatenote.app`
-- [ ] **DECIDE**: Keep `com.theultimatenote.app` or change to `com.connectingdots.app`?
-  - Changing later is impossible — you must pick before first upload
-  - If keeping current ID, that's fine — the ID doesn't have to match the display name
+### 2. Application ID — KEEPING AS-IS
+Keeping `com.theultimatenote.app` — the ID is internal and never shown to users.
+- [x] Decision: keep `com.theultimatenote.app`
 
 ### 3. Release Signing Key
-No signing config exists in the build file yet.
+Signing config added to build.gradle.kts (reads from local.properties).
 - [ ] Generate release keystore (see `store-submission/RELEASE_BUILD_GUIDE.md` for commands)
 - [ ] Store keystore file securely (password manager, encrypted drive)
   - **WARNING**: If you lose this file, you can NEVER update the app
-- [ ] Add signing config to `composeApp/build.gradle.kts`
-- [ ] Add signing properties to `local.properties` (already gitignored)
+- [x] Add signing config to `composeApp/build.gradle.kts`
+- [ ] Add signing properties to `local.properties` (already gitignored):
+  ```
+  RELEASE_STORE_FILE=../keystore/release.jks
+  RELEASE_STORE_PASSWORD=your_store_password
+  RELEASE_KEY_ALIAS=your_key_alias
+  RELEASE_KEY_PASSWORD=your_key_password
+  ```
 - [ ] Build and test `./gradlew assembleRelease` successfully
 
 ### 4. Privacy Policy Hosting
@@ -107,22 +111,18 @@ See `store-submission/ASSET_CHECKLIST.md` for specs.
 - [x] Firestore offline persistence enabled
 - [x] Target SDK 35, Min SDK 26
 
-### Still Needed
-- [ ] **ProGuard rules update**: Current rules are basic. Add keeps for:
-  - Ktor client classes
-  - Groq/Gemini API model classes
-  - Test with release build to verify nothing is stripped
-- [ ] **Crashlytics**: Plugin defined in version catalog but not applied
-  - Apply `com.google.firebase.crashlytics` plugin in build.gradle.kts
-  - This gives you crash reports in Play Console
-- [ ] **Remove debug logging**: Strip any `println`/`Log.d` from release builds
+### Code Changes — DONE
+- [x] **ProGuard rules update**: Added keeps for Ktor, OkHttp, Coil, Credentials, Billing, kotlinx-datetime, multiplatform-settings
+- [x] **Crashlytics**: Plugin applied in build.gradle.kts
+- [x] **Debug logging**: No println/Log.d found in source code
+- [x] **Version bump**: `versionName = "1.0.0"` set
+- [x] **Signing config**: Added to build.gradle.kts (reads from local.properties)
+
+### Still Needed (manual testing)
 - [ ] **Verify offline handling**:
   - [ ] App launches in airplane mode
   - [ ] AI chat shows graceful error when offline
   - [ ] Tasks created offline sync when reconnected
-- [ ] **Version bump for release**: Update in `composeApp/build.gradle.kts`:
-  - `versionCode = 1` (increment for each upload)
-  - `versionName = "1.0.0"` (first public release)
 
 ---
 

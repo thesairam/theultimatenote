@@ -26,7 +26,7 @@
 
 1. Click "Create app"
 2. Fill in:
-   - App name: **The Ultimate Note**
+   - App name: **Connecting Dots**
    - Default language: English (US)
    - App or game: **App**
    - Free or paid: **Free**
@@ -38,7 +38,7 @@
 
 ### Main Store Listing
 
-- **App name**: The Ultimate Note
+- **App name**: Connecting Dots
 - **Short description** (80 chars max):
   > Plan, journal, and learn — Kanban boards, daily planner, and AI assistant in one.
 - **Full description** (4000 chars max): See `STORE_DESCRIPTIONS.md`
@@ -168,7 +168,7 @@ Output: `composeApp/build/outputs/bundle/release/composeApp-release.aab`
 2. Click "Create new release"
 3. Upload the AAB
 4. Add release notes:
-   > Initial release of The Ultimate Note — your all-in-one productivity companion with Kanban boards, daily planning, journaling, and AI assistance.
+   > Initial release of Connecting Dots — your all-in-one productivity companion with Kanban boards, daily planning, journaling, and AI assistance.
 5. Review and roll out
 
 ### Recommended testing progression:

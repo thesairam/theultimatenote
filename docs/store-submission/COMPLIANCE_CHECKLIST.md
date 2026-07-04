@@ -13,7 +13,7 @@ Everything that must be true for a smooth launch on both stores.
 - [x] Uses Android App Bundle (AAB) format — `./gradlew bundleRelease`
 - [x] All permissions declared in AndroidManifest.xml
 - [ ] Release signing key generated and stored securely
-- [ ] ProGuard/R8 minification enabled for release builds
+- [x] ProGuard/R8 minification enabled for release builds
 - [ ] Tested on multiple screen sizes (phone + tablet)
 - [ ] Tested on API 26 and API 35
 
@@ -72,13 +72,13 @@ Everything that must be true for a smooth launch on both stores.
 
 Both stores expect the privacy policy to be accessible from within the app. Add links in the Profile/Settings screen.
 
-**Status**: Needs implementation
+**Status**: Done — links available in Profile screen
 
 ### 2. Add account deletion capability
 
 Google Play requires apps that create accounts to allow account deletion. Apple requires the same.
 
-**Status**: Needs implementation — add "Delete Account" button in Profile that:
+**Status**: Done — "Delete Account" button in Profile screen:
 - Deletes all Firestore data under the user's UID
 - Deletes the Firebase Auth account
 - Signs the user out
@@ -93,14 +93,14 @@ Apple requires Sign in with Apple if any third-party sign-in (Google) is offered
 
 POST_NOTIFICATIONS permission requires runtime request on Android 13+.
 
-**Status**: Verify this is implemented. If not, add runtime permission dialog on first launch.
+**Status**: Done — runtime permission request implemented in MainActivity.
 
 ### 5. Release build configuration
 
-- [ ] Enable R8/ProGuard minification
-- [ ] Remove debug logging
-- [ ] Ensure API keys are not in source code (they're in local.properties, gitignored — good)
-- [ ] Set proper versionCode/versionName for release
+- [x] Enable R8/ProGuard minification
+- [x] Remove debug logging
+- [x] Ensure API keys are not in source code (they're in local.properties, gitignored — good)
+- [x] Set proper versionCode/versionName for release (1.0.0)
 
 ### 6. Offline handling
 

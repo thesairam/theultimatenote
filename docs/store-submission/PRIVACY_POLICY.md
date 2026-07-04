@@ -1,13 +1,13 @@
 # Privacy Policy
 
-**The Ultimate Note**
-**Last Updated: June 17, 2026**
+**Connecting Dots**
+**Last Updated: July 4, 2026**
 
 ---
 
 ## Introduction
 
-The Ultimate Note ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application ("the App").
+Connecting Dots ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application ("the App").
 
 By using the App, you agree to the collection and use of information in accordance with this policy.
 
@@ -79,7 +79,7 @@ The App uses the following third-party services:
 ## Data Retention
 
 - Your data is retained as long as your account is active.
-- You may delete your account and all associated data at any time by contacting us (see below).
+- You may delete your account and all associated data at any time from within the App (Profile > Delete Account).
 - Chat messages with the AI assistant are stored in your account and can be cleared from within the App.
 
 ---
@@ -142,7 +142,7 @@ We may update this Privacy Policy from time to time. We will notify you of any c
 If you have any questions about this Privacy Policy or wish to exercise your data rights, contact us at:
 
 **Email**: sairam.25@live.com
-**App**: The Ultimate Note
+**App**: Connecting Dots
 **Developer**: Sairam
 
 ---

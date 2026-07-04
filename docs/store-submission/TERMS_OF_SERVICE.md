@@ -1,19 +1,19 @@
 # Terms of Service
 
-**The Ultimate Note**
-**Last Updated: June 17, 2026**
+**Connecting Dots**
+**Last Updated: July 4, 2026**
 
 ---
 
 ## 1. Acceptance of Terms
 
-By downloading, installing, or using The Ultimate Note ("the App"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree, do not use the App.
+By downloading, installing, or using Connecting Dots ("the App"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree, do not use the App.
 
 ---
 
 ## 2. Description of Service
 
-The Ultimate Note is a personal productivity application that provides:
+Connecting Dots is a personal productivity application that provides:
 - Task management with Kanban boards and priority matrix
 - Daily planning with recurring and temporary tasks
 - Learning path tracking
@@ -65,7 +65,7 @@ You agree not to:
 ## 7. Intellectual Property
 
 - The App, its design, code, and branding are owned by us.
-- "The Ultimate Note" name and logo are our trademarks.
+- "Connecting Dots" name and logo are our trademarks.
 - You may not copy, modify, or distribute the App or its components.
 
 ---
@@ -80,7 +80,7 @@ You agree not to:
 
 ## 9. Termination
 
-- You may delete your account at any time by contacting us.
+- You may delete your account at any time from within the App (Profile > Delete Account).
 - We may suspend or terminate your account if you violate these Terms.
 - Upon termination, your data will be deleted in accordance with our Privacy Policy.
 
@@ -121,4 +121,4 @@ These Terms shall be governed by and construed in accordance with the laws appli
 For questions about these Terms, contact us at:
 
 **Email**: sairam.25@live.com
-**App**: The Ultimate Note
+**App**: Connecting Dots

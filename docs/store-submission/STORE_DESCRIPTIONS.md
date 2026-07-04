@@ -19,7 +19,7 @@ Plan. Prioritize. Learn. Journal. Grow. — Your all-in-one productivity app.
 ```
 Plan. Prioritize. Learn. Journal. Grow.
 
-The Ultimate Note is the productivity app that's exactly enough — not too much like Notion, not too little like a basic to-do list. It combines Kanban boards, an Eisenhower priority matrix, daily planning, journaling, and an AI assistant into one clean, calm experience.
+Connecting Dots is the productivity app that's exactly enough — not too much like Notion, not too little like a basic to-do list. It combines Kanban boards, an Eisenhower priority matrix, daily planning, journaling, and an AI assistant into one clean, calm experience.
 
 KANBAN BOARDS
 Create projects with fully customizable Kanban boards. Drag tasks between columns, track progress visually, and stay on top of every project — from side hustles to life goals.
@@ -43,7 +43,7 @@ MOTIVATION
 Set up your inspirational figures in your profile. Get daily motivational quotes delivered as push notifications to start your morning right.
 
 DESIGNED TO FEEL RIGHT
-Deep emerald and burnished gold. Smooth rounded cards. Subtle borders. The Ultimate Note is designed to feel calm, trustworthy, and productive — a space where you want to spend time organizing your life.
+Deep emerald and burnished gold. Smooth rounded cards. Subtle borders. Connecting Dots is designed to feel calm, trustworthy, and productive — a space where you want to spend time organizing your life.
 
 KEY FEATURES:
 - Kanban boards with customizable columns
@@ -103,7 +103,7 @@ kanban,planner,journal,productivity,tasks,notes,daily,learning,priority,matrix,A
 
 ### Google Play:
 ```
-Initial release of The Ultimate Note!
+Initial release of Connecting Dots!
 
 - Kanban boards for all your projects
 - Eisenhower priority matrix — toggle between Kanban and Matrix views
@@ -118,7 +118,7 @@ Initial release of The Ultimate Note!
 
 ### Apple:
 ```
-Welcome to The Ultimate Note — your all-in-one productivity companion.
+Welcome to Connecting Dots — your all-in-one productivity companion.
 
 Plan with Kanban boards, prioritize with the Eisenhower matrix, track daily tasks and learning goals, journal your thoughts, and chat with an AI assistant. All in one calm, beautiful app.
 ```

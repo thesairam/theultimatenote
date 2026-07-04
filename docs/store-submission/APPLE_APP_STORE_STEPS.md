@@ -31,7 +31,7 @@
 2. Create App ID:
    - Platform: iOS
    - Bundle ID: `com.theultimatenote.app`
-   - Description: The Ultimate Note
+   - Description: Connecting Dots
    - Capabilities: Push Notifications, Sign in with Apple
 3. Create Distribution Certificate (or use Xcode automatic signing)
 4. Create Provisioning Profile for App Store distribution
@@ -51,7 +51,7 @@
 2. Click "My Apps" > "+" > "New App"
 3. Fill in:
    - Platform: iOS
-   - Name: **The Ultimate Note**
+   - Name: **Connecting Dots**
    - Primary language: English (US)
    - Bundle ID: `com.theultimatenote.app`
    - SKU: `theultimatenote001`
@@ -121,7 +121,7 @@ Navigate to: App Store Connect > App > App Privacy
 ## Step 6: Store Listing
 
 ### App Store Metadata:
-- **Name**: The Ultimate Note (30 char limit)
+- **Name**: Connecting Dots (30 char limit)
 - **Subtitle** (30 chars): Plan. Prioritize. Learn. Journal. Grow.
 
   Note: This is 38 chars. Shortened version: "Plan. Prioritize. Learn. Grow."

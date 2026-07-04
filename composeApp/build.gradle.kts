@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.googleServices)
+    alias(libs.plugins.firebaseCrashlytics)
 }
 
 kotlin {
@@ -56,6 +57,7 @@ kotlin {
             implementation(libs.firebase.auth)
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.storage)
+            implementation(libs.firebase.crashlytics)
             implementation(libs.credentials)
             implementation(libs.credentials.play)
             implementation(libs.googleid)
@@ -70,12 +72,30 @@ android {
     namespace = "com.theultimatenote.app"
     compileSdk = 35
 
+    val localPropsFile = rootProject.file("local.properties")
+    val localProps = if (localPropsFile.exists()) {
+        Properties().apply { load(localPropsFile.inputStream()) }
+    } else {
+        Properties()
+    }
+
+    signingConfigs {
+        if (localProps.containsKey("RELEASE_STORE_FILE")) {
+            create("release") {
+                storeFile = file(localProps.getProperty("RELEASE_STORE_FILE"))
+                storePassword = localProps.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = localProps.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = localProps.getProperty("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.theultimatenote.app"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
     }
 
     buildFeatures {
@@ -83,17 +103,11 @@ android {
     }
 
     defaultConfig {
-        val localPropsFile = rootProject.file("local.properties")
-        val props = if (localPropsFile.exists()) {
-            Properties().apply { load(localPropsFile.inputStream()) }
-        } else {
-            Properties()
-        }
-        val geminiKey1 = props.getProperty("GEMINI_API_KEY_1", "")
+        val geminiKey1 = localProps.getProperty("GEMINI_API_KEY_1", "")
             .ifBlank { project.findProperty("GEMINI_API_KEY_1")?.toString() ?: "" }
-        val geminiKey2 = props.getProperty("GEMINI_API_KEY_2", "")
+        val geminiKey2 = localProps.getProperty("GEMINI_API_KEY_2", "")
             .ifBlank { project.findProperty("GEMINI_API_KEY_2")?.toString() ?: "" }
-        val groqKey = props.getProperty("GROQ_API_KEY", "")
+        val groqKey = localProps.getProperty("GROQ_API_KEY", "")
             .ifBlank { project.findProperty("GROQ_API_KEY")?.toString() ?: "" }
         buildConfigField("String", "GEMINI_API_KEY_1", "\"$geminiKey1\"")
         buildConfigField("String", "GEMINI_API_KEY_2", "\"$geminiKey2\"")
@@ -105,6 +119,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (signingConfigs.names.contains("release")) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

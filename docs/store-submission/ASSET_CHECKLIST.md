@@ -34,7 +34,7 @@ For Play Store upload:
 - [ ] **1024x500 PNG or JPG**
 - Displayed at top of store listing
 - Should include:
-  - App name: "The Ultimate Note"
+  - App name: "Connecting Dots"
   - Tagline: "Plan. Prioritize. Learn. Journal. Grow."
   - App icon or UI preview
   - Use the deep emerald + gold color scheme
