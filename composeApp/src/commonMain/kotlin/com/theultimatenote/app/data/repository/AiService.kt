@@ -191,9 +191,10 @@ class AiService(
             }
 
             val response = client.post(
-                "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+                "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent"
             ) {
                 contentType(ContentType.Application.Json)
+                header("x-goog-api-key", apiKey)
                 setBody(GeminiRequest(contents = contents, systemInstruction = systemInstruction))
             }
 

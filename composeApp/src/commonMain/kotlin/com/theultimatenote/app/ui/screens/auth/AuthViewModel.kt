@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.AuthResult
 import com.theultimatenote.app.data.repository.AuthUser
+import com.theultimatenote.app.data.security.InputValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,8 +46,13 @@ class AuthViewModel(
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     fun signIn(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) {
-            _uiState.value = AuthUiState(error = "Please fill in all fields.")
+        val emailCheck = InputValidator.validateEmail(email)
+        if (!emailCheck.isValid) {
+            _uiState.value = AuthUiState(error = emailCheck.error)
+            return
+        }
+        if (password.isBlank()) {
+            _uiState.value = AuthUiState(error = "Please enter your password.")
             return
         }
         viewModelScope.launch {
@@ -59,12 +65,19 @@ class AuthViewModel(
     }
 
     fun signUp(email: String, password: String, displayName: String) {
-        if (email.isBlank() || password.isBlank() || displayName.isBlank()) {
-            _uiState.value = AuthUiState(error = "Please fill in all fields.")
+        val emailCheck = InputValidator.validateEmail(email)
+        if (!emailCheck.isValid) {
+            _uiState.value = AuthUiState(error = emailCheck.error)
             return
         }
-        if (password.length < 6) {
-            _uiState.value = AuthUiState(error = "Password must be at least 6 characters.")
+        val passwordCheck = InputValidator.validatePassword(password)
+        if (!passwordCheck.isValid) {
+            _uiState.value = AuthUiState(error = passwordCheck.error)
+            return
+        }
+        val nameCheck = InputValidator.validateDisplayName(displayName)
+        if (!nameCheck.isValid) {
+            _uiState.value = AuthUiState(error = nameCheck.error)
             return
         }
         viewModelScope.launch {
@@ -77,8 +90,9 @@ class AuthViewModel(
     }
 
     fun sendPasswordReset(email: String) {
-        if (email.isBlank()) {
-            _uiState.value = AuthUiState(error = "Please enter your email.")
+        val emailCheck = InputValidator.validateEmail(email)
+        if (!emailCheck.isValid) {
+            _uiState.value = AuthUiState(error = emailCheck.error)
             return
         }
         viewModelScope.launch {

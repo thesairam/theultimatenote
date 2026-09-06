@@ -10,6 +10,7 @@ import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.NotebookRepository
 import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.data.repository.SubscriptionRepository
+import com.theultimatenote.app.data.security.InputValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -52,7 +53,8 @@ class ProjectsViewModel(
     }
 
     fun createProject(name: String) {
-        if (name.isBlank()) return
+        val nameCheck = InputValidator.validateProjectName(name)
+        if (!nameCheck.isValid) return
         viewModelScope.launch {
             val user = cachedUser.value ?: return@launch
             val sub = subscriptionRepository.getSubscription(user.uid).first()

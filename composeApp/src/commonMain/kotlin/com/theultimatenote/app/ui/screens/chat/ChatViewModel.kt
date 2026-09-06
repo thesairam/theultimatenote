@@ -12,6 +12,8 @@ import com.theultimatenote.app.data.model.SubscriptionTier
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.ChatRepository
 import com.theultimatenote.app.data.repository.AiService
+import com.theultimatenote.app.data.security.ChatActionValidator
+import com.theultimatenote.app.data.security.InputValidator
 import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.data.repository.SubscriptionRepository
 import com.theultimatenote.app.data.repository.TaskRepository
@@ -85,7 +87,8 @@ class ChatViewModel(
     }
 
     fun sendMessage(text: String) {
-        if (text.isBlank() || userId == null) return
+        val msgCheck = InputValidator.validateChatMessage(text)
+        if (!msgCheck.isValid || userId == null) return
 
         val userMessage = ChatMessage(
             role = "user",
@@ -296,15 +299,24 @@ class ChatViewModel(
         }
 
         val type = extractString("type")
-        if (type.isBlank()) return null
+        if (!ChatActionValidator.isValidActionType(type)) return null
+
+        val projectName = extractString("projectName")
+        if (projectName.isNotBlank() && !ChatActionValidator.isValidProjectName(projectName)) return null
+
+        val title = extractString("title")
+        if (type == "create_task" && !ChatActionValidator.isValidTaskTitle(title)) return null
+
+        val scheduledTime = extractString("scheduledTime").ifBlank { null }
+        if (!ChatActionValidator.isValidScheduledTime(scheduledTime)) return null
 
         return ChatAction(
             type = type,
-            projectName = extractString("projectName"),
-            title = extractString("title"),
+            projectName = projectName,
+            title = title,
             columnName = extractString("columnName"),
             isRecurring = extractBool("isRecurring"),
-            scheduledTime = extractString("scheduledTime").ifBlank { null },
+            scheduledTime = scheduledTime,
         )
     }
 
