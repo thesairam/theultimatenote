@@ -10,7 +10,7 @@ import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.ImageStorageRepository
 import com.theultimatenote.app.data.repository.NotebookRepository
 import com.theultimatenote.app.data.repository.SubscriptionRepository
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -88,7 +88,7 @@ class NotebooksViewModel(
                         name = name,
                         description = description,
                         ownerId = user.uid,
-                        createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+                        createdAt = kotlin.time.Clock.System.now().toEpochMilliseconds(),
                     )
                 )
             } catch (e: Exception) {
@@ -129,7 +129,7 @@ class NotebooksViewModel(
                         return@launch
                     }
                 }
-                val now = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+                val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
                 notebookRepository.createPage(
                     NotebookPage(
                         notebookId = notebook.id,

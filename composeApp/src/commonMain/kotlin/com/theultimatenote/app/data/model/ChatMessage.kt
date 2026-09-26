@@ -1,8 +1,10 @@
 package com.theultimatenote.app.data.model
 
 import androidx.compose.runtime.Immutable
+import kotlinx.serialization.Serializable
 
 @Immutable
+@Serializable
 data class ChatAction(
     val type: String = "",
     val projectName: String = "",
@@ -14,6 +16,7 @@ data class ChatAction(
 )
 
 @Immutable
+@Serializable
 data class ChatMessage(
     val id: String = "",
     val role: String = "user",

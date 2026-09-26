@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.ChecklistItem
 import com.theultimatenote.app.data.model.Project
 import com.theultimatenote.app.data.model.ProjectType
+import com.theultimatenote.app.util.formatClock
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -644,7 +645,7 @@ private fun QuickAddTaskDialog(
                     onClick = {
                         checklistItems.add(
                             ChecklistItem(
-                                id = kotlinx.datetime.Clock.System.now().toEpochMilliseconds().toString(),
+                                id = kotlin.time.Clock.System.now().toEpochMilliseconds().toString(),
                                 text = "",
                                 isChecked = false,
                             )
@@ -795,7 +796,7 @@ private fun QuickAddTaskDialog(
                 TextButton(onClick = {
                     val h = timePickerState.hour
                     val m = timePickerState.minute
-                    scheduledTime = "%02d:%02d".format(h, m)
+                    scheduledTime = formatClock(h, m)
                     showTimePicker = false
                 }) {
                     Text("Set")

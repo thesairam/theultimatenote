@@ -68,6 +68,7 @@ import com.theultimatenote.app.data.model.Task
 import com.theultimatenote.app.ui.components.EisenhowerMatrixView
 import com.theultimatenote.app.ui.components.TaskEditDialog
 import androidx.compose.foundation.layout.Box
+import com.theultimatenote.app.util.formatClock
 import androidx.compose.material3.CircularProgressIndicator
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -412,7 +413,7 @@ fun DailyScreen() {
                 TextButton(onClick = {
                     val h = timePickerState.hour
                     val m = timePickerState.minute
-                    scheduledTime = "%02d:%02d".format(h, m)
+                    scheduledTime = formatClock(h, m)
                     showTimePicker = false
                 }) {
                     Text("Set")

@@ -1,11 +1,11 @@
 [versions]
 agp = "8.7.3"
-kotlin = "2.1.0"
-compose-multiplatform = "1.7.3"
+kotlin = "2.2.21"
+compose-multiplatform = "1.9.3"
 ktor = "3.0.3"
 kotlinx-serialization = "1.7.3"
-kotlinx-datetime = "0.6.1"
-koin = "4.0.2"
+kotlinx-datetime = "0.7.1"
+koin = "4.1.1"
 multiplatform-settings = "1.2.0"
 lifecycle = "2.8.4"
 activity-compose = "1.9.3"
@@ -20,6 +20,7 @@ credentials = "1.5.0-beta01"
 googleid = "1.1.1"
 billing = "7.1.1"
 coil = "2.7.0"
+gitlive-firebase = "2.7.0"
 
 [libraries]
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
@@ -54,9 +55,15 @@ googleid = { module = "com.google.android.libraries.identity.googleid:googleid",
 billing = { module = "com.android.billingclient:billing-ktx", version.ref = "billing" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 
+gitlive-firebase-common = { module = "dev.gitlive:firebase-common", version.ref = "gitlive-firebase" }
+gitlive-firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "gitlive-firebase" }
+gitlive-firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "gitlive-firebase" }
+gitlive-firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "gitlive-firebase" }
+
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

@@ -17,8 +17,14 @@ local.properties
 *.ap_
 
 # iOS / Xcode
-iosApp/*.xcworkspace/xcuserdata/
-iosApp/*/xcuserdata/
+# iosApp.xcodeproj/.xcworkspace and Generated/ are produced by `xcodegen generate`
+# (from iosApp/project.yml); Pods/ and composeApp.podspec are produced by `pod install`
+# and the Kotlin Cocoapods Gradle plugin. See iosApp/README.md to regenerate them.
+iosApp/iosApp.xcodeproj/
+iosApp/iosApp.xcworkspace/
+iosApp/Generated/
+iosApp/Pods/
+composeApp/composeApp.podspec
 DerivedData/
 *.pbxuser
 *.mode1v3

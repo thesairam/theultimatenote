@@ -21,6 +21,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # iOS simulator tests (Apple Silicon)
 ./gradlew iosSimulatorArm64Test
 
+# iOS simulator build (requires macOS + Xcode; see "iOS Setup" below for one-time setup)
+cd iosApp && xcodebuild -workspace iosApp.xcworkspace -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17' build
+
 # Lint checks
 ./gradlew ktlintCheck
 ./gradlew detekt
@@ -57,9 +60,31 @@ theultimatenote/
 
 ## Development Environment
 
-- Project runs in **WSL Linux** on Windows
-- Testing via **Android Studio emulator** on Windows host
+- Originally developed in **WSL Linux** on Windows, testing via Android Studio emulator on the Windows host.
+- A **Mac** with Xcode and Android Studio is also available now — required for building/running the iOS app (Xcode/CocoaPods only exist on macOS). Android can still be built and tested from either machine.
 - Dockerized for portability
+
+## iOS Setup
+
+iOS support was added after the initial WSL-only setup. One-time steps on macOS:
+
+1. Install CocoaPods: `brew install cocoapods` (already done if you're reading this after setup)
+2. Add `GoogleService-Info.plist` for the iOS Firebase app (Firebase console → project `theultimatenote-7a9cb` → Add app → iOS, bundle ID `com.theultimatenote.app`) to `iosApp/iosApp/` — until this exists, the app still launches but Firebase calls show a "not configured" message
+3. Generate/refresh the Xcode project after any change to `iosApp/project.yml` or the `cocoapods {}` block in `composeApp/build.gradle.kts`:
+   ```bash
+   cd iosApp
+   xcodegen generate
+   pod install
+   ```
+4. Build & run: open `iosApp/iosApp.xcworkspace` (not `.xcodeproj`) in Xcode, or:
+   ```bash
+   cd iosApp
+   xcodebuild -workspace iosApp.xcworkspace -scheme iosApp -destination 'platform=iOS Simulator,name=<device>' build
+   ```
+
+See `iosApp/README.md` for what's stubbed (Google/Apple sign-in, calendar sync, billing — all need either a paid Apple Developer account or more setup) versus fully working (email/password auth, Firestore data, local notifications — all sharing the same Firebase project as Android).
+
+This machine also runs a very new/beta Xcode (ahead of what the Kotlin Gradle Plugin has been tested against), which required a few workarounds already applied in `composeApp/build.gradle.kts`: a `post_install` deployment-target patch for the Kotlin Cocoapods plugin's synthetic Podfile, and Kotlin/Compose Multiplatform/Koin versions bumped together (Kotlin 2.2.21, Compose Multiplatform 1.9.3, Koin 4.1.1) to keep klib ABI versions compatible with the current GitLive Firebase Kotlin SDK.
 
 ## Key Conventions
 

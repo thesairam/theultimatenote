@@ -39,7 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.theultimatenote.app.data.model.ChecklistItem
 import com.theultimatenote.app.data.model.Task
-import kotlinx.datetime.Clock
+import com.theultimatenote.app.util.formatClock
+import kotlin.time.Clock
 import androidx.compose.material.icons.filled.Image
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -270,7 +271,7 @@ fun TaskEditDialog(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    scheduledTime = "%02d:%02d".format(timePickerState.hour, timePickerState.minute)
+                    scheduledTime = formatClock(timePickerState.hour, timePickerState.minute)
                     showTimePicker = false
                 }) {
                     Text("Set")

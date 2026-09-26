@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.theultimatenote.app.util.pad2
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.delay
 
@@ -119,7 +120,7 @@ fun PomodoroTimerSheet(
                 val minutes = remainingSeconds / 60
                 val seconds = remainingSeconds % 60
                 Text(
-                    text = "%02d:%02d".format(minutes, seconds),
+                    text = "${minutes.pad2()}:${seconds.pad2()}",
                     fontSize = 56.sp,
                     fontWeight = FontWeight.Light,
                     color = when (state) {
