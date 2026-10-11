@@ -43,6 +43,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        AndroidAppContext.setActivity(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        AndroidAppContext.setActivity(null)
+    }
+
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -55,34 +65,36 @@ class MainActivity : ComponentActivity() {
 
     private fun scheduleRecurringTaskReminders() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val user = FirebaseAuth.getInstance().currentUser ?: return@launch
-            val db = FirebaseFirestore.getInstance()
-            val projects = db.collection("projects")
-                .whereEqualTo("ownerId", user.uid)
-                .whereEqualTo("type", "DAILY")
-                .get().await()
-
-            projects.documents.forEach { projectDoc ->
-                val tasks = projectDoc.reference.collection("tasks")
-                    .whereEqualTo("isRecurring", true)
+            try {
+                val user = FirebaseAuth.getInstance().currentUser ?: return@launch
+                val db = FirebaseFirestore.getInstance()
+                val projects = db.collection("projects")
+                    .whereEqualTo("ownerId", user.uid)
+                    .whereEqualTo("type", "DAILY")
                     .get().await()
 
-                tasks.documents.forEach { taskDoc ->
-                    val time = taskDoc.getString("scheduledTime") ?: return@forEach
-                    val parts = time.split(":")
-                    if (parts.size == 2) {
-                        val hour = parts[0].toIntOrNull() ?: return@forEach
-                        val minute = parts[1].toIntOrNull() ?: return@forEach
-                        NotificationHelper.scheduleTaskReminder(
-                            this@MainActivity,
-                            taskDoc.id,
-                            taskDoc.getString("title") ?: "Task reminder",
-                            hour,
-                            minute,
-                        )
+                projects.documents.forEach { projectDoc ->
+                    val tasks = projectDoc.reference.collection("tasks")
+                        .whereEqualTo("isRecurring", true)
+                        .get().await()
+
+                    tasks.documents.forEach { taskDoc ->
+                        val time = taskDoc.getString("scheduledTime") ?: return@forEach
+                        val parts = time.split(":")
+                        if (parts.size == 2) {
+                            val hour = parts[0].toIntOrNull() ?: return@forEach
+                            val minute = parts[1].toIntOrNull() ?: return@forEach
+                            NotificationHelper.scheduleTaskReminder(
+                                this@MainActivity,
+                                taskDoc.id,
+                                taskDoc.getString("title") ?: "Task reminder",
+                                hour,
+                                minute,
+                            )
+                        }
                     }
                 }
-            }
+            } catch (_: Exception) { }
         }
     }
 }

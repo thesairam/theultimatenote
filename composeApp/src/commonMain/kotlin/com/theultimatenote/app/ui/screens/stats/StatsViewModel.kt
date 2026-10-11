@@ -71,15 +71,18 @@ class StatsViewModel(
         .flatMapLatest { user ->
             if (user != null) projectRepository.getProjects(user.uid) else flowOf(emptyList())
         }
+        .catch { emit(emptyList()) }
 
     private val allTasksByProject = allProjects.flatMapLatest { projects ->
         if (projects.isEmpty()) flowOf(emptyList<Triple<Project, ProjectType, List<Task>>>())
         else combine(projects.map { project ->
-            taskRepository.getTasksForProject(project.id).map { tasks ->
-                Triple(project, project.type, tasks)
-            }
+            taskRepository.getTasksForProject(project.id)
+                .catch { emit(emptyList()) }
+                .map { tasks ->
+                    Triple(project, project.type, tasks)
+                }
         }) { it.toList() }
-    }
+    }.catch { emit(emptyList()) }
 
     private val pomodoroData = cachedUser
         .flatMapLatest { user ->

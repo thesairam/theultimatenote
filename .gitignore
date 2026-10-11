@@ -43,3 +43,7 @@ Thumbs.db
 # Secrets
 *.keystore
 *.jks
+testcred.txt
+
+# Kotlin build cache
+.kotlin/

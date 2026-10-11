@@ -82,7 +82,7 @@ class IosAuthRepository : AuthRepository {
                 projectDoc.reference.delete()
             }
 
-            val boardsSnapshot = db.collection("kanban_boards")
+            val boardsSnapshot = db.collection("boards")
                 .where { "ownerId" equalTo uid }
                 .get()
             for (boardDoc in boardsSnapshot.documents) {

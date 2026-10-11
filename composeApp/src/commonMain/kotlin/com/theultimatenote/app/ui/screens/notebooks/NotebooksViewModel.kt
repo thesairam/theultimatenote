@@ -13,6 +13,7 @@ import com.theultimatenote.app.data.repository.SubscriptionRepository
 import kotlin.time.Clock
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +47,7 @@ class NotebooksViewModel(
         .flatMapLatest { user ->
             if (user != null) notebookRepository.getNotebooks(user.uid) else flowOf(emptyList())
         }
+        .catch { emit(emptyList()) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _uiState = MutableStateFlow(NotebooksUiState())

@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -59,6 +60,7 @@ class DailyViewModel(
         .flatMapLatest { user ->
             if (user != null) projectRepository.getProjects(user.uid) else flowOf(emptyList())
         }
+        .catch { emit(emptyList()) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val specialProjects = allProjects
@@ -70,12 +72,13 @@ class DailyViewModel(
                 val flows = listOfNotNull(
                     daily?.let { d ->
                         combine(
-                            projectRepository.getBoard(d.id),
-                            taskRepository.getTasksForProject(d.id),
+                            projectRepository.getBoard(d.id).catch { emit(null) },
+                            taskRepository.getTasksForProject(d.id).catch { emit(emptyList()) },
                         ) { board, tasks -> Triple(board, tasks, null as List<Task>?) }
                     },
                     learning?.let { l ->
                         taskRepository.getTasksForProject(l.id)
+                            .catch { emit(emptyList()) }
                             .flatMapLatest { tasks ->
                                 flowOf(Triple(null as KanbanBoard?, null as List<Task>?, tasks))
                             }
@@ -104,6 +107,7 @@ class DailyViewModel(
         }
 
     val uiState: StateFlow<DailyUiState> = specialProjects
+        .catch { emit(DailyUiState(isLoading = false)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyUiState())
 
     fun addDailyTask(

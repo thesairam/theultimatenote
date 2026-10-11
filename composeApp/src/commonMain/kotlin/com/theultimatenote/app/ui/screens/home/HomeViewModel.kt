@@ -74,16 +74,17 @@ class HomeViewModel(
         .flatMapLatest { user ->
             if (user != null) projectRepository.getProjects(user.uid) else flowOf(emptyList())
         }
+        .catch { emit(emptyList()) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val allProjectsWithTasks = allProjects.flatMapLatest { projects ->
         if (projects.isEmpty()) flowOf(emptyList())
         else combine(projects.map { project ->
-            taskRepository.getTasksForProject(project.id).map { tasks ->
-                project to tasks
-            }
+            taskRepository.getTasksForProject(project.id)
+                .catch { emit(emptyList()) }
+                .map { tasks -> project to tasks }
         }) { it.toList() }
-    }
+    }.catch { emit(emptyList()) }
 
     private val pomodoroData = cachedUser
         .flatMapLatest { user ->
@@ -148,9 +149,19 @@ class HomeViewModel(
 
     private fun resetRecurringTasksIfNeeded() {
         viewModelScope.launch {
-            val projects = allProjects.value.ifEmpty { allProjects.first { it.isNotEmpty() } }
-            projects.filter { it.type == ProjectType.DAILY || it.type == ProjectType.LEARNING }.forEach { project ->
-                taskRepository.resetRecurringTasks(project.id)
+            try {
+                // Wait for projects to load, but don't block forever — if nothing arrives
+                // within a few seconds (e.g. user has no projects yet), just skip.
+                val projects = allProjects.value.ifEmpty {
+                    kotlinx.coroutines.withTimeoutOrNull(5_000L) {
+                        allProjects.first { it.isNotEmpty() }
+                    } ?: return@launch
+                }
+                projects.filter { it.type == ProjectType.DAILY || it.type == ProjectType.LEARNING }.forEach { project ->
+                    taskRepository.resetRecurringTasks(project.id)
+                }
+            } catch (_: Exception) {
+                // Non-fatal — recurring tasks will be reset next time
             }
         }
     }

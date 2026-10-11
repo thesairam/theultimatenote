@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
@@ -24,9 +25,11 @@ class KanbanViewModel(
 ) : ViewModel() {
 
     val board: StateFlow<KanbanBoard?> = projectRepository.getBoard(projectId)
+        .catch { emit(null) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val tasks: StateFlow<List<Task>> = taskRepository.getTasksForProject(projectId)
+        .catch { emit(emptyList()) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _showMatrix = MutableStateFlow(false)

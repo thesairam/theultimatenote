@@ -159,8 +159,6 @@ fun DailyScreen() {
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             )
         } else {
-        val recurringTasks = remember(dailyTasks) { dailyTasks.filter { it.isRecurring } }
-        val tempTasks = remember(dailyTasks) { dailyTasks.filter { !it.isRecurring } }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),

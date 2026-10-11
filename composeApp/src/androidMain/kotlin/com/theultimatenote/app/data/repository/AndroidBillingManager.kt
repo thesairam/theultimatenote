@@ -13,6 +13,7 @@ import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.google.firebase.auth.FirebaseAuth
+import com.theultimatenote.app.AndroidAppContext
 import com.theultimatenote.app.data.model.SubscriptionInfo
 import com.theultimatenote.app.data.model.SubscriptionTier
 import kotlinx.coroutines.CoroutineScope
@@ -106,7 +107,7 @@ class AndroidBillingManager(
     }
 
     override fun launchUpgradeFlow() {
-        val activity = context as? Activity
+        val activity = AndroidAppContext.currentActivity
         if (activity == null || !billingClient.isReady) {
             ensureConnected()
             return

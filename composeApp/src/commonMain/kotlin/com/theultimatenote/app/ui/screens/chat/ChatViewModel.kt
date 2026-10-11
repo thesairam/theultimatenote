@@ -64,20 +64,25 @@ class ChatViewModel(
 
     private fun loadChatHistory() {
         viewModelScope.launch {
-            val user = cachedUser.first { it != null }
-            userId = user?.uid
-            if (userId == null) return@launch
+            try {
+                val user = kotlinx.coroutines.withTimeoutOrNull(5_000L) {
+                    cachedUser.first { it != null }
+                } ?: return@launch
+                userId = user.uid
 
-            chatRepository.getMessages(userId!!).collect { messages ->
-                val displayMessages = if (messages.isEmpty()) {
-                    listOf(welcomeMessage())
-                } else {
-                    messages
+                chatRepository.getMessages(userId!!).collect { messages ->
+                    val displayMessages = if (messages.isEmpty()) {
+                        listOf(welcomeMessage())
+                    } else {
+                        messages
+                    }
+                    _uiState.value = _uiState.value.copy(
+                        messages = displayMessages,
+                        isHistoryLoaded = true,
+                    )
                 }
-                _uiState.value = _uiState.value.copy(
-                    messages = displayMessages,
-                    isHistoryLoaded = true,
-                )
+            } catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(isHistoryLoaded = true)
             }
         }
     }

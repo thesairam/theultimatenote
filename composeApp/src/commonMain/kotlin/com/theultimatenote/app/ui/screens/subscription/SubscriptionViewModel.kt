@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -40,6 +41,7 @@ class SubscriptionViewModel(
         .flatMapLatest { user ->
             if (user != null) subscriptionRepository.getSubscription(user.uid) else flowOf(SubscriptionInfo())
         }
+        .catch { emit(SubscriptionInfo()) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SubscriptionInfo())
 
     val isPro: StateFlow<Boolean> = subscription

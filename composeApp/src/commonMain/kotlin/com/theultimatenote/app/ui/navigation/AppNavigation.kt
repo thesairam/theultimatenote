@@ -28,6 +28,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -41,6 +42,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.theultimatenote.app.data.repository.AuthRepository
+import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.ui.screens.auth.AuthViewModel
 import com.theultimatenote.app.ui.screens.auth.ForgotPasswordScreen
 import com.theultimatenote.app.ui.screens.auth.LoginScreen
@@ -54,6 +57,7 @@ import com.theultimatenote.app.ui.screens.projects.ProjectsScreen
 import com.theultimatenote.app.ui.screens.profile.ProfileScreen
 import com.theultimatenote.app.ui.screens.chat.ChatScreen
 import com.theultimatenote.app.ui.screens.stats.StatsScreen
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import org.koin.compose.getKoin
 import org.koin.compose.viewmodel.koinViewModel
@@ -140,6 +144,21 @@ private fun AuthNavigation(authViewModel: AuthViewModel) {
 
 @Composable
 private fun MainNavigation(authViewModel: AuthViewModel) {
+    // Ensure default projects (Daily, Learning) exist as soon as the user is authenticated,
+    // not just when they visit the Projects tab. This prevents other screens from hanging
+    // while waiting for projects that don't exist yet.
+    val koin = getKoin()
+    LaunchedEffect(Unit) {
+        try {
+            val authRepo = koin.get<AuthRepository>()
+            val projectRepo = koin.get<ProjectRepository>()
+            val user = authRepo.currentUser.first { it != null } ?: return@LaunchedEffect
+            projectRepo.createDefaultProjects(user.uid)
+        } catch (_: Exception) {
+            // Non-fatal — Projects tab will retry via ensureDefaultProjects
+        }
+    }
+
     val navController: NavHostController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination

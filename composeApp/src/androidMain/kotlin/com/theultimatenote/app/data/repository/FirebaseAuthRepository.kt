@@ -108,7 +108,7 @@ class FirebaseAuthRepository : AuthRepository {
             }
 
             // Delete kanban boards
-            val boardsSnapshot = db.collection("kanban_boards")
+            val boardsSnapshot = db.collection("boards")
                 .whereEqualTo("ownerId", uid)
                 .get().await()
             for (boardDoc in boardsSnapshot.documents) {

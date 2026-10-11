@@ -10,11 +10,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class ProfileUiState(
     val user: User = User(),
@@ -40,19 +42,28 @@ class ProfileViewModel(
 
     private fun loadProfile() {
         viewModelScope.launch {
-            val authUser = authRepository.currentUser.first()
-            if (authUser != null) {
-                userRepository.getUser(authUser.uid).collect { user ->
-                    _uiState.value = _uiState.value.copy(
-                        user = user ?: User(
-                            id = authUser.uid,
-                            email = authUser.email ?: "",
-                            displayName = authUser.displayName ?: "",
-                        ),
-                        isLoading = false,
+            try {
+                val authUser = authRepository.currentUser.first()
+                if (authUser != null) {
+                    val fallbackUser = User(
+                        id = authUser.uid,
+                        email = authUser.email ?: "",
+                        displayName = authUser.displayName ?: "",
                     )
+                    userRepository.getUser(authUser.uid)
+                        .catch {
+                            emit(fallbackUser)
+                        }
+                        .collect { user ->
+                            _uiState.value = _uiState.value.copy(
+                                user = user ?: fallbackUser,
+                                isLoading = false,
+                            )
+                        }
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
                 }
-            } else {
+            } catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
