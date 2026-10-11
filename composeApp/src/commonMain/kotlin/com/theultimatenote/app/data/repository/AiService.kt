@@ -14,8 +14,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-// --- Groq (OpenAI-compatible) models ---
-
 @Serializable
 data class GroqRequest(
     val model: String,
@@ -47,8 +45,6 @@ data class GroqError(
     val message: String = "",
     val type: String = "",
 )
-
-// --- Gemini models ---
 
 @Serializable
 data class GeminiRequest(
@@ -90,11 +86,9 @@ data class GeminiError(
     val code: Int = 0,
 )
 
-// --- Multi-provider AI Service ---
-
 class AiService(
     private val groqApiKey: String,
-    private val geminiApiKeys: List<String>,
+    private val geminiApiKeys: List<String> = emptyList(),
 ) {
 
     private val client = HttpClient {
@@ -119,7 +113,6 @@ class AiService(
     )
 
     suspend fun chat(messages: List<ChatMessage>, systemContext: String? = null): String {
-        // Try Groq first (primary)
         if (groqApiKey.isNotBlank()) {
             for (model in groqModels) {
                 val result = tryGroq(model, messages, systemContext)
@@ -127,7 +120,6 @@ class AiService(
             }
         }
 
-        // Fall back to Gemini (try each key × each model)
         val validGeminiKeys = geminiApiKeys.filter { it.isNotBlank() }
         for (key in validGeminiKeys) {
             for (model in geminiModels) {

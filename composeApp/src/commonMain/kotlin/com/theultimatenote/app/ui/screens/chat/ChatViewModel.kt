@@ -14,6 +14,7 @@ import com.theultimatenote.app.data.repository.ChatRepository
 import com.theultimatenote.app.data.repository.AiService
 import com.theultimatenote.app.data.security.ChatActionValidator
 import com.theultimatenote.app.data.security.InputValidator
+import com.theultimatenote.app.data.repository.NotebookRepository
 import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.data.repository.SubscriptionRepository
 import com.theultimatenote.app.data.repository.TaskRepository
@@ -48,6 +49,7 @@ class ChatViewModel(
     private val projectRepository: ProjectRepository,
     private val taskRepository: TaskRepository,
     private val subscriptionRepository: SubscriptionRepository,
+    private val notebookRepository: NotebookRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -120,7 +122,6 @@ class ChatViewModel(
                         return@launch
                     }
                 }
-                subscriptionRepository.incrementAiMessageCount(userId!!)
                 chatRepository.saveMessage(userId!!, userMessage)
 
                 val systemContext = buildSystemContext()
@@ -128,6 +129,7 @@ class ChatViewModel(
                     .filter { it.id != "welcome" }
 
                 val rawReply = aiService.chat(conversationHistory, systemContext)
+                subscriptionRepository.incrementAiMessageCount(userId!!)
 
                 val (cleanContent, actions) = parseActions(rawReply)
 
@@ -211,7 +213,18 @@ class ChatViewModel(
 
     private suspend fun executeCreateProject(action: ChatAction) {
         val uid = userId ?: return
-        projectRepository.createProject(
+        val sub = subscriptionRepository.getSubscription(uid).first()
+        if (sub.subscriptionTier == SubscriptionTier.FREE) {
+            val projects = projectRepository.getProjects(uid).first()
+            val regularCount = projects.count { it.type == ProjectType.REGULAR }
+            if (regularCount >= SubscriptionLimits.FREE_MAX_PROJECTS) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Free plan limit of ${SubscriptionLimits.FREE_MAX_PROJECTS} projects reached."
+                )
+                return
+            }
+        }
+        val projectId = projectRepository.createProject(
             com.theultimatenote.app.data.model.Project(
                 name = action.projectName,
                 type = ProjectType.REGULAR,
@@ -219,6 +232,13 @@ class ChatViewModel(
                 createdAt = Clock.System.now().toEpochMilliseconds(),
             )
         )
+        val nbId = notebookRepository.createDefaultNotebookForProject(
+            projectId = projectId,
+            projectName = action.projectName,
+            ownerId = uid,
+            sections = listOf("Planning", "In Progress", "Review", "Done"),
+        )
+        projectRepository.updateProjectNotebookId(projectId, nbId)
     }
 
     private suspend fun buildSystemContext(): String = withContext(Dispatchers.Default) {

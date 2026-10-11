@@ -143,7 +143,7 @@ class DailyViewModel(
                     isUrgent = isUrgent ?: !isRecurring,
                 )
             )
-            if (isRecurring && scheduledTime != null) {
+            if (scheduledTime != null) {
                 scheduleNotification(taskId, title.trim(), scheduledTime)
             }
         }
@@ -153,6 +153,16 @@ class DailyViewModel(
         val project = uiState.value.learningProject ?: return
         if (title.isBlank()) return
         viewModelScope.launch {
+            val user = cachedUser.value ?: return@launch
+            val sub = subscriptionRepository.getSubscription(user.uid).first()
+            if (sub.subscriptionTier == SubscriptionTier.FREE) {
+                val state = uiState.value
+                val totalActive = (state.dailyTasks + state.learningTasks).count { !it.isCompletedToday }
+                if (totalActive >= SubscriptionLimits.FREE_MAX_ACTIVE_TASKS) {
+                    _limitReached.value = "You've reached the free limit of ${SubscriptionLimits.FREE_MAX_ACTIVE_TASKS} active tasks. Upgrade to Pro for unlimited tasks."
+                    return@launch
+                }
+            }
             taskRepository.createTask(
                 Task(
                     title = title.trim(),

@@ -48,6 +48,10 @@ class IosProjectRepository : ProjectRepository {
         return docRef.id
     }
 
+    override suspend fun updateProjectNotebookId(projectId: String, notebookId: String) {
+        projectsCol.document(projectId).update("notebookId" to notebookId)
+    }
+
     override suspend fun toggleStarProject(projectId: String, isStarred: Boolean) {
         projectsCol.document(projectId).update("isStarred" to isStarred)
     }

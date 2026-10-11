@@ -146,8 +146,6 @@ kotlin {
     }
 }
 
-// Mirrors the Android BuildConfig fields below so AiService has the same
-// Groq/Gemini keys available on iOS without an Android-only BuildConfig class.
 val generateIosBuildKeys = tasks.register("generateIosBuildKeys") {
     val outputDir = layout.buildDirectory.dir("generated/iosBuildKeys/com/theultimatenote/app")
     outputs.dir(layout.buildDirectory.dir("generated/iosBuildKeys"))

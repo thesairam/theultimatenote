@@ -42,7 +42,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.theultimatenote.app.data.model.ProjectType
 import com.theultimatenote.app.data.repository.AuthRepository
+import com.theultimatenote.app.data.repository.NotebookRepository
 import com.theultimatenote.app.data.repository.ProjectRepository
 import com.theultimatenote.app.ui.screens.auth.AuthViewModel
 import com.theultimatenote.app.ui.screens.auth.ForgotPasswordScreen
@@ -152,8 +154,27 @@ private fun MainNavigation(authViewModel: AuthViewModel) {
         try {
             val authRepo = koin.get<AuthRepository>()
             val projectRepo = koin.get<ProjectRepository>()
+            val notebookRepo = koin.get<NotebookRepository>()
             val user = authRepo.currentUser.first { it != null } ?: return@LaunchedEffect
             projectRepo.createDefaultProjects(user.uid)
+            // Ensure default projects have linked notebooks
+            val projects = projectRepo.getProjects(user.uid).first()
+            for (project in projects) {
+                if (project.notebookId.isBlank()) {
+                    val sections = when (project.type) {
+                        ProjectType.DAILY -> listOf("Recurring", "Temporary")
+                        ProjectType.LEARNING -> listOf("Learning Path 1", "Learning Path 2", "Completed")
+                        else -> listOf("Planning", "In Progress", "Review", "Done")
+                    }
+                    val nbId = notebookRepo.createDefaultNotebookForProject(
+                        projectId = project.id,
+                        projectName = project.name,
+                        ownerId = user.uid,
+                        sections = sections,
+                    )
+                    projectRepo.updateProjectNotebookId(project.id, nbId)
+                }
+            }
         } catch (_: Exception) {
             // Non-fatal — Projects tab will retry via ensureDefaultProjects
         }

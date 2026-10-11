@@ -13,6 +13,7 @@ interface ProjectRepository {
     suspend fun deleteProject(projectId: String)
     suspend fun completeProject(projectId: String)
     suspend fun toggleStarProject(projectId: String, isStarred: Boolean)
+    suspend fun updateProjectNotebookId(projectId: String, notebookId: String)
     suspend fun createDefaultProjects(userId: String)
 
     fun getBoard(projectId: String): Flow<KanbanBoard?>

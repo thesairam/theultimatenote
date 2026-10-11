@@ -77,12 +77,13 @@ class ProjectsViewModel(
                     isDeletable = true,
                 )
             )
-            notebookRepository.createDefaultNotebookForProject(
+            val notebookId = notebookRepository.createDefaultNotebookForProject(
                 projectId = projectId,
                 projectName = name.trim(),
                 ownerId = user.uid,
                 sections = listOf("Planning", "In Progress", "Review", "Done"),
             )
+            projectRepository.updateProjectNotebookId(projectId, notebookId)
             _isCreating.value = false
         }
     }

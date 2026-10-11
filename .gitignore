@@ -47,3 +47,4 @@ testcred.txt
 
 # Kotlin build cache
 .kotlin/
+node_modules/

@@ -241,7 +241,7 @@ class HomeViewModel(
                     createdAt = Clock.System.now().toEpochMilliseconds(),
                 )
             )
-            if (isRecurring && scheduledTime != null) {
+            if (scheduledTime != null) {
                 scheduleNotification(taskId, title.trim(), scheduledTime)
             }
         }

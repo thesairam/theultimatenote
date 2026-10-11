@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -107,7 +108,7 @@ fun ChatScreen(
         },
     ) { innerPadding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            modifier = Modifier.fillMaxSize().padding(innerPadding).imePadding(),
         ) {
             LazyColumn(
                 modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp),
@@ -134,6 +135,16 @@ fun ChatScreen(
                                 strokeWidth = 2.dp,
                             )
                         }
+                    }
+                }
+                if (uiState.error != null) {
+                    item {
+                        Text(
+                            text = uiState.error!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        )
                     }
                 }
                 item { Box(modifier = Modifier.padding(bottom = 8.dp)) }

@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // User profiles — only the owner can read/write
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Subcollections under user (pomodoro_sessions, subscriptions, etc.)
+      match /{subcollection}/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Projects — owner can CRUD, create allowed for any authenticated user
+    match /projects/{projectId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+
+      // Subcollections under projects (tasks, etc.)
+      match /{subcollection=**} {
+        allow read, write: if request.auth != null;
+      }
+    }
+
+    // Kanban boards — linked to projects, authenticated users only
+    match /boards/{boardId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Top-level tasks (if any) — authenticated users only
+    match /tasks/{taskId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Notebooks — owner can CRUD
+    match /notebooks/{notebookId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+
+      // Pages inside notebooks
+      match /pages/{pageId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+
+    // Chat messages — only the owner can read/write their chat
+    match /chats/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

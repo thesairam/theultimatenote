@@ -50,6 +50,10 @@ class FirebaseProjectRepository : ProjectRepository {
         return docRef.id
     }
 
+    override suspend fun updateProjectNotebookId(projectId: String, notebookId: String) {
+        projectsCol.document(projectId).update("notebookId", notebookId).await()
+    }
+
     override suspend fun toggleStarProject(projectId: String, isStarred: Boolean) {
         projectsCol.document(projectId).update("isStarred", isStarred).await()
     }
