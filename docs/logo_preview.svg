@@ -1,29 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- Clipboard/Note body -->
-  <rect x="30" y="55" width="100" height="115" rx="14" ry="14" fill="#2D5F2D"/>
-
-  <!-- Clipboard tab/clip at top center -->
-  <rect x="60" y="45" width="40" height="20" rx="6" ry="6" fill="#2D5F2D"/>
-
-  <!-- Horizontal lines inside clipboard -->
-  <line x1="48" y1="95" x2="85" y2="95" stroke="#F5F0E8" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-  <line x1="48" y1="110" x2="78" y2="110" stroke="#F5F0E8" stroke-width="4" stroke-linecap="round" opacity="0.32"/>
-  <line x1="48" y1="125" x2="90" y2="125" stroke="#F5F0E8" stroke-width="4" stroke-linecap="round" opacity="0.25"/>
-
-  <!-- Bold swooping checkmark -->
-  <path d="M60,120 L85,148 Q90,154 95,145 L155,42"
-    fill="none" stroke="#2D5F2D" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- Checkmark with lighter green overlay for depth -->
-  <path d="M60,120 L85,148 Q90,154 95,145 L155,42"
-    fill="none" stroke="#3E7E3E" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- Large gold 4-point sparkle star -->
-  <path d="M163,32 C164,38 167,41 173,42 C167,43 164,46 163,52 C162,46 159,43 153,42 C159,41 162,38 163,32 Z" fill="#B8960C"/>
-
-  <!-- Small gold 4-point sparkle -->
-  <path d="M28,50 C28.5,53 30,54.5 33,55 C30,55.5 28.5,57 28,60 C27.5,57 26,55.5 23,55 C26,54.5 27.5,53 28,50 Z" fill="#B8960C"/>
-
-  <!-- Tiny gold dot accent -->
-  <circle cx="148" cy="58" r="2.5" fill="#B8960C" opacity="0.7"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1B4332"/>
+      <stop offset="100%" stop-color="#2D6B4A"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g transform="rotate(-12, 256, 264)">
+    <rect x="176" y="184" width="160" height="160" rx="30" stroke="#C4A035" stroke-width="18" fill="none"/>
+    <path d="M 216 270 L 244 298 L 300 232" stroke="#D4B560" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <line x1="176" y1="184" x2="116" y2="120" stroke="#C4A035" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="116" cy="120" r="15" fill="#D4B560"/>
+    <line x1="336" y1="184" x2="396" y2="120" stroke="#C4A035" stroke-width="8" stroke-linecap="round"/>
+    <path d="M396,82 C400,104 410,114 432,118 C410,122 400,132 396,154 C392,132 382,122 360,118 C382,114 392,104 396,82Z" fill="#B8960C"/>
+    <line x1="336" y1="344" x2="396" y2="404" stroke="#C4A035" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="396" cy="404" r="15" fill="#D4B560"/>
+    <line x1="176" y1="344" x2="116" y2="404" stroke="#C4A035" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="116" cy="404" r="15" fill="#D4B560"/>
+  </g>
 </svg>
