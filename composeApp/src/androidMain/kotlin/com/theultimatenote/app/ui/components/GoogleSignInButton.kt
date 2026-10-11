@@ -69,7 +69,7 @@ private suspend fun signInWithGoogle(
         val idToken = googleIdTokenCredential.idToken
         onTokenReceived(idToken)
     } catch (e: Exception) {
-        onError(e.message ?: "Google sign-in failed")
+        onError("Google sign-in failed. Please try again.")
     }
 }
 

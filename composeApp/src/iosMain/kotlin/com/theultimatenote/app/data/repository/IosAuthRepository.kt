@@ -1,6 +1,7 @@
 package com.theultimatenote.app.data.repository
 
 import com.theultimatenote.app.FirebaseInit
+import com.theultimatenote.app.data.ErrorMessages
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.auth.auth
@@ -110,27 +111,11 @@ class IosAuthRepository : AuthRepository {
 
             AuthResult.Success(AuthUser(uid = uid, email = null, displayName = null))
         } catch (e: Exception) {
-            AuthResult.Error(e.message ?: "Failed to delete account. You may need to sign in again before deleting.")
+            AuthResult.Error(ErrorMessages.fromException(e, "Failed to delete account. Please sign out and sign back in, then try again."))
         }
     }
 
-    private fun friendlyAuthError(e: Exception): String {
-        val message = e.message ?: return "Something went wrong. Please try again."
-        return when {
-            message.contains("password is invalid", ignoreCase = true) ||
-                message.contains("INVALID_LOGIN_CREDENTIALS", ignoreCase = true) ->
-                "Incorrect email or password."
-            message.contains("no user record", ignoreCase = true) ->
-                "No account found with this email."
-            message.contains("already in use", ignoreCase = true) ->
-                "An account with this email already exists."
-            message.contains("weak", ignoreCase = true) ->
-                "Password is too weak. Use at least 6 characters."
-            message.contains("badly formatted", ignoreCase = true) ->
-                "Invalid email format."
-            else -> message
-        }
-    }
+    private fun friendlyAuthError(e: Exception): String = ErrorMessages.forAuth(e)
 
     private fun FirebaseUser.toAuthUser() = AuthUser(
         uid = uid,

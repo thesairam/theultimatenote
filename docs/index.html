@@ -10,23 +10,26 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #FFFDF5;
             color: #091E13;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 2rem;
+            line-height: 1.6;
         }
-        .card {
-            max-width: 480px;
+        .hero {
             text-align: center;
-            padding: 3rem 2rem;
+            padding: 4rem 2rem 3rem;
+            max-width: 600px;
+            margin: 0 auto;
         }
         h1 { color: #1A3C2A; font-size: 2.25rem; margin-bottom: 0.5rem; }
-        .tagline { color: #B8932B; font-weight: 600; font-size: 1.1rem; margin-bottom: 2rem; }
-        .description { color: #5A8A6A; line-height: 1.7; margin-bottom: 2rem; }
-        .links { display: flex; flex-direction: column; gap: 0.75rem; }
-        .links a {
-            display: block;
+        .tagline { color: #B8932B; font-weight: 600; font-size: 1.1rem; margin-bottom: 1.5rem; }
+        .description { color: #5A8A6A; margin-bottom: 2rem; }
+        .store-links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .store-links a {
+            display: inline-block;
             padding: 0.75rem 1.5rem;
             background: #1A3C2A;
             color: #FAF0D0;
@@ -35,27 +38,249 @@
             font-weight: 500;
             transition: background 0.2s;
         }
-        .links a:hover { background: #2D6B4A; }
-        .links a.secondary {
-            background: transparent;
-            color: #1A3C2A;
-            border: 1px solid #D4B560;
+        .store-links a:hover { background: #2D6B4A; }
+        .legal-links {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-bottom: 3rem;
         }
-        .links a.secondary:hover { background: #FAF0D020; }
+        .legal-links a {
+            color: #5A8A6A;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #D4B560;
+        }
+        .legal-links a:hover { color: #1A3C2A; }
+        .section {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 2rem 3rem;
+        }
+        h2 {
+            color: #1A3C2A;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #D4B560;
+        }
+        h3 {
+            color: #2D6B4A;
+            font-size: 1.1rem;
+            margin: 1.5rem 0 0.5rem;
+        }
+        ol, ul { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: #333; }
+        code {
+            background: #F0EDE0;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #F0EDE0;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 0.75rem 0 1rem;
+            font-size: 0.85em;
+        }
+        pre code { background: none; padding: 0; }
+        .note {
+            background: #FFF8E7;
+            border-left: 4px solid #D4B560;
+            padding: 0.75rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge-android { background: #E8F5E9; color: #2E7D32; }
+        .badge-ios { background: #E3F2FD; color: #1565C0; }
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #5A8A6A;
+            font-size: 0.85rem;
+            border-top: 1px solid #E8E4D8;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="hero">
         <h1>Connecting Dots</h1>
         <p class="tagline">Plan. Prioritize. Learn. Journal. Grow.</p>
         <p class="description">
             Your all-in-one productivity companion. Kanban boards, Eisenhower priority matrix,
             daily planner, journaling, and AI assistant &mdash; exactly enough to stay organized.
         </p>
-        <div class="links">
+        <div class="store-links">
+            <!-- Replace # with actual store URLs once published -->
+            <a href="#">Google Play Store</a>
+            <a href="#">Apple App Store</a>
+        </div>
+        <div class="legal-links">
             <a href="privacy-policy.html">Privacy Policy</a>
-            <a href="terms-of-service.html" class="secondary">Terms of Service</a>
+            <a href="terms-of-service.html">Terms of Service</a>
         </div>
     </div>
+
+    <div class="section">
+        <h2>Google Play Store Launch <span class="badge badge-android">Android</span></h2>
+
+        <h3>1. Prerequisites</h3>
+        <ul>
+            <li>Google Play Developer account ($25 one-time fee) &mdash; <a href="https://play.google.com/console" style="color:#2D6B4A">play.google.com/console</a></li>
+            <li>A signed release APK or AAB (Android App Bundle)</li>
+        </ul>
+
+        <h3>2. Generate a Signing Key</h3>
+        <pre><code>keytool -genkey -v -keystore connecting-dots-release.keystore \
+  -alias connectingdots -keyalg RSA -keysize 2048 -validity 10000</code></pre>
+        <div class="note">Store the keystore file and passwords securely &mdash; you cannot update the app without them.</div>
+
+        <h3>3. Build the Release AAB</h3>
+        <p>Add signing config to <code>androidApp/build.gradle.kts</code>:</p>
+        <pre><code>android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("connecting-dots-release.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = "connectingdots"
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+        }
+    }
+}</code></pre>
+        <p>Then build:</p>
+        <pre><code>./gradlew :androidApp:bundleRelease</code></pre>
+        <p>Output: <code>androidApp/build/outputs/bundle/release/androidApp-release.aab</code></p>
+
+        <h3>4. Create the App in Play Console</h3>
+        <ol>
+            <li>Go to <strong>All apps &rarr; Create app</strong></li>
+            <li>App name: <strong>Connecting Dots</strong></li>
+            <li>Default language: English</li>
+            <li>App type: App, Free</li>
+        </ol>
+
+        <h3>5. Store Listing</h3>
+        <ul>
+            <li><strong>Short description:</strong> Plan, prioritize, learn, and journal &mdash; all in one clean app.</li>
+            <li><strong>Full description:</strong> Your productivity companion combining Kanban boards, daily planning, learning paths, journaling, and AI chat.</li>
+            <li><strong>Screenshots:</strong> At least 2 phone screenshots (1080&times;1920 or similar)</li>
+            <li><strong>Feature graphic:</strong> 1024&times;500 banner image</li>
+            <li><strong>App icon:</strong> 512&times;512 high-res icon</li>
+            <li><strong>Category:</strong> Productivity</li>
+            <li><strong>Privacy policy URL:</strong> Link to this site's privacy-policy.html</li>
+        </ul>
+
+        <h3>6. Content Rating &amp; Compliance</h3>
+        <ol>
+            <li>Complete the content rating questionnaire (the app is suitable for all ages)</li>
+            <li>Set target audience (13+)</li>
+            <li>Complete the data safety form (Firebase Auth collects email; Firestore stores user data)</li>
+        </ol>
+
+        <h3>7. Upload &amp; Release</h3>
+        <ol>
+            <li>Go to <strong>Production &rarr; Create new release</strong></li>
+            <li>Upload the <code>.aab</code> file</li>
+            <li>Add release notes</li>
+            <li>Review and roll out to production (or start with internal/closed testing first)</li>
+        </ol>
+        <div class="note">First review typically takes 1&ndash;3 days. Subsequent updates are usually faster.</div>
+    </div>
+
+    <div class="section">
+        <h2>Apple App Store Launch <span class="badge badge-ios">iOS</span></h2>
+
+        <h3>1. Prerequisites</h3>
+        <ul>
+            <li>Apple Developer Program membership ($99/year) &mdash; <a href="https://developer.apple.com/programs/" style="color:#2D6B4A">developer.apple.com/programs</a></li>
+            <li>Xcode installed on macOS</li>
+            <li>The iOS app builds and runs on a simulator</li>
+        </ul>
+
+        <h3>2. Configure Signing</h3>
+        <ol>
+            <li>Open <code>iosApp/iosApp.xcworkspace</code> in Xcode</li>
+            <li>Select the <strong>iosApp</strong> target &rarr; <strong>Signing &amp; Capabilities</strong></li>
+            <li>Select your team (Apple Developer account)</li>
+            <li>Bundle ID: <code>com.theultimatenote.app</code></li>
+            <li>Xcode will auto-create provisioning profiles</li>
+        </ol>
+
+        <h3>3. Create App in App Store Connect</h3>
+        <ol>
+            <li>Go to <a href="https://appstoreconnect.apple.com" style="color:#2D6B4A">appstoreconnect.apple.com</a> &rarr; <strong>My Apps &rarr; + New App</strong></li>
+            <li>Platform: iOS</li>
+            <li>Name: <strong>Connecting Dots</strong></li>
+            <li>Primary language: English</li>
+            <li>Bundle ID: <code>com.theultimatenote.app</code></li>
+            <li>SKU: <code>connectingdots001</code></li>
+        </ol>
+
+        <h3>4. App Store Listing</h3>
+        <ul>
+            <li><strong>Subtitle:</strong> Plan, Learn &amp; Journal</li>
+            <li><strong>Description:</strong> Same as Play Store</li>
+            <li><strong>Keywords:</strong> kanban, planner, journal, productivity, todo, tasks, learning</li>
+            <li><strong>Screenshots:</strong> Required for 6.7" (iPhone 16 Pro Max) and 6.1" at minimum</li>
+            <li><strong>App icon:</strong> 1024&times;1024 (already in <code>iosApp/iosApp/Assets.xcassets/AppIcon.appiconset</code>)</li>
+            <li><strong>Category:</strong> Productivity</li>
+            <li><strong>Privacy policy URL:</strong> Link to this site's privacy-policy.html</li>
+        </ul>
+
+        <h3>5. Build &amp; Archive</h3>
+        <ol>
+            <li>In Xcode: <strong>Product &rarr; Destination &rarr; Any iOS Device</strong></li>
+            <li><strong>Product &rarr; Archive</strong></li>
+            <li>Once archived, the Organizer window opens</li>
+            <li>Click <strong>Distribute App &rarr; App Store Connect &rarr; Upload</strong></li>
+        </ol>
+        <p>Or from the command line:</p>
+        <pre><code>cd iosApp
+xcodebuild -workspace iosApp.xcworkspace -scheme iosApp \
+  -destination 'generic/platform=iOS' \
+  -archivePath build/iosApp.xcarchive archive
+
+xcodebuild -exportArchive \
+  -archivePath build/iosApp.xcarchive \
+  -exportOptionsPlist ExportOptions.plist \
+  -exportPath build/export</code></pre>
+
+        <h3>6. App Review Preparation</h3>
+        <ul>
+            <li>Provide a demo account (email + password) for the review team</li>
+            <li>Add notes about Firebase backend and any features requiring sign-in</li>
+            <li>Complete the App Privacy questionnaire (data collected: email, name, usage data)</li>
+            <li>Age rating: 4+ (no objectionable content)</li>
+        </ul>
+
+        <h3>7. Submit for Review</h3>
+        <ol>
+            <li>In App Store Connect, select the uploaded build</li>
+            <li>Fill in all required metadata</li>
+            <li>Click <strong>Submit for Review</strong></li>
+        </ol>
+        <div class="note">First iOS review typically takes 1&ndash;2 days. Apple may ask follow-up questions about data privacy or sign-in flows.</div>
+    </div>
+
+    <footer>
+        &copy; 2024&ndash;2026 Connecting Dots. All rights reserved.
+    </footer>
 </body>
 </html>

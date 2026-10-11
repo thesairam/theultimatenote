@@ -2,6 +2,7 @@ package com.theultimatenote.app.ui.screens.notebooks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.theultimatenote.app.data.ErrorMessages
 import com.theultimatenote.app.data.model.Notebook
 import com.theultimatenote.app.data.model.NotebookPage
 import com.theultimatenote.app.data.model.SubscriptionLimits
@@ -94,7 +95,7 @@ class NotebooksViewModel(
                     )
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                _uiState.value = _uiState.value.copy(error = ErrorMessages.fromException(e))
             }
         }
     }
@@ -107,7 +108,7 @@ class NotebooksViewModel(
                     goBackToNotebooks()
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                _uiState.value = _uiState.value.copy(error = ErrorMessages.fromException(e))
             }
         }
     }
@@ -143,7 +144,7 @@ class NotebooksViewModel(
                     )
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                _uiState.value = _uiState.value.copy(error = ErrorMessages.fromException(e))
             }
         }
     }
@@ -156,7 +157,7 @@ class NotebooksViewModel(
                 notebookRepository.updatePage(updated)
                 _uiState.value = _uiState.value.copy(selectedPage = updated)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                _uiState.value = _uiState.value.copy(error = ErrorMessages.fromException(e))
             }
         }
     }
@@ -178,7 +179,7 @@ class NotebooksViewModel(
                     goBackToPages()
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                _uiState.value = _uiState.value.copy(error = ErrorMessages.fromException(e))
             }
         }
     }

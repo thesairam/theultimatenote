@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
+import com.theultimatenote.app.data.ErrorMessages
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -38,7 +39,7 @@ class FirebaseAuthRepository : AuthRepository {
         } catch (e: FirebaseAuthInvalidUserException) {
             AuthResult.Error("No account found with this email.")
         } catch (e: Exception) {
-            AuthResult.Error(e.message ?: "Sign in failed. Please try again.")
+            AuthResult.Error(ErrorMessages.forAuth(e))
         }
     }
 
@@ -56,7 +57,7 @@ class FirebaseAuthRepository : AuthRepository {
         } catch (e: FirebaseAuthInvalidCredentialsException) {
             AuthResult.Error("Invalid email format.")
         } catch (e: Exception) {
-            AuthResult.Error(e.message ?: "Sign up failed. Please try again.")
+            AuthResult.Error(ErrorMessages.forAuth(e))
         }
     }
 
@@ -67,7 +68,7 @@ class FirebaseAuthRepository : AuthRepository {
             val user = result.user ?: return AuthResult.Error("Google sign-in failed.")
             AuthResult.Success(user.toAuthUser())
         } catch (e: Exception) {
-            AuthResult.Error(e.message ?: "Google sign-in failed. Please try again.")
+            AuthResult.Error(ErrorMessages.forAuth(e))
         }
     }
 
@@ -140,7 +141,7 @@ class FirebaseAuthRepository : AuthRepository {
 
             AuthResult.Success(AuthUser(uid = uid, email = null, displayName = null))
         } catch (e: Exception) {
-            AuthResult.Error(e.message ?: "Failed to delete account. You may need to sign in again before deleting.")
+            AuthResult.Error(ErrorMessages.fromException(e, "Failed to delete account. Please sign out and sign back in, then try again."))
         }
     }
 

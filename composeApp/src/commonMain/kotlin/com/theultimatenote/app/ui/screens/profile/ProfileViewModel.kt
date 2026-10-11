@@ -2,6 +2,7 @@ package com.theultimatenote.app.ui.screens.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.theultimatenote.app.data.ErrorMessages
 import com.theultimatenote.app.data.model.User
 import com.theultimatenote.app.data.repository.AuthRepository
 import com.theultimatenote.app.data.repository.AuthResult
@@ -80,7 +81,7 @@ class ProfileViewModel(
                 userRepository.saveUser(_uiState.value.user)
                 _uiState.value = _uiState.value.copy(isSaving = false, saveSuccess = true)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isSaving = false, error = e.message ?: "Failed to save profile")
+                _uiState.value = _uiState.value.copy(isSaving = false, error = ErrorMessages.fromException(e, "Failed to save profile. Please try again."))
             }
         }
     }

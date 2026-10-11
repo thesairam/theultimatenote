@@ -56,7 +56,7 @@ actual fun GoogleCalendarConnectButton(
                         onError("No Google account linked")
                     }
                 } catch (e: Exception) {
-                    onError(e.message ?: "Google Calendar authorization failed")
+                    onError("Google Calendar authorization failed. Please try again.")
                 }
             }
         } else {
@@ -86,7 +86,7 @@ actual fun GoogleCalendarConnectButton(
                     e.intent?.let { consentLauncher.launch(it) }
                         ?: onError("Calendar authorization requires user action")
                 } catch (e: Exception) {
-                    onError(e.message ?: "Google Calendar connection failed")
+                    onError("Google Calendar connection failed. Please try again.")
                 }
             }
         },
